@@ -1,4 +1,4 @@
-name: Validate source bundle
+name: Validate runtime bundles
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Rebuild universal source bundle
+      - name: Rebuild runtime bundles
         run: node build-universal.mjs
 
-      - name: Verify generated bundle is current
-        run: git diff --exit-code -- src/games/universal.lua
+      - name: Verify generated bundles are current
+        run: git diff --exit-code -- src/games/universal.lua src/guis/new.lua src/guis/old.lua src/guis/rise.lua src/guis/liquidbounce.lua src/guis/wurst.lua
