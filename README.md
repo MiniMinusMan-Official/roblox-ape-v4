@@ -6,9 +6,7 @@
   </picture>
 </p>
 <h2 align="center">
-  A Roblox script built from the ground up for your precise needs!
-  <br/>
-  Rise up to the top while remaining completely untouchable.
+  A Roblox script made from 7GrandDad to be fixed for potASSium lol
 </h2>
 
 ## 7granddad contacts
