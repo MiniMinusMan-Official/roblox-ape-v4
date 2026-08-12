@@ -314,7 +314,7 @@ local function downloadFile(path, func)
 	if not isfile(path) then
 		createDownloader(path)
 		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/'..select(1, path:gsub('newvape/', '')), true)
+			return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/'..select(1, path:gsub('newvape/', '')), true)
 		end)
 		if not suc or res == '404: Not Found' then
 			error(res)
@@ -4011,7 +4011,7 @@ general:CreateButton({
 		if shared.VapeDeveloper then
 			loadstring(readfile('newvape/loader.lua'), 'loader')()
 		else
-			loadstring(game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/loader.lua', true))()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/loader.lua', true))()
 		end
 	end,
 	Tooltip = 'This will set your profile to the default settings of Vape'
@@ -4030,7 +4030,7 @@ general:CreateButton({
 		if shared.VapeDeveloper then
 			loadstring(readfile('newvape/loader.lua'), 'loader')()
 		else
-			loadstring(game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/loader.lua', true))()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/loader.lua', true))()
 		end
 	end,
 	Tooltip = 'Reloads vape for debugging purposes'
@@ -4138,7 +4138,7 @@ guipane:CreateDropdown({
 			if shared.VapeDeveloper then
 				loadstring(readfile('newvape/loader.lua'), 'loader')()
 			else
-				loadstring(game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/loader.lua', true))()
+				loadstring(game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/loader.lua', true))()
 			end
 		end
 	end,

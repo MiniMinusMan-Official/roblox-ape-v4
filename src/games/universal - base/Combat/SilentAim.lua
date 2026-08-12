@@ -27,6 +27,7 @@ run(function()
 	ProjectileRaycast.RespectCanCollide = true
 	local fireoffset, rand, delayCheck = CFrame.identity, Random.new(), tick()
 	local oldnamecall, oldray
+	local namecallHookInstalled, rayHookInstalled = false, false
 
 	local function getTarget(origin, obj)
 		if rand.NextNumber(rand, 0, 100) > (AutoFire.Enabled and 100 or HitChance.Value) then return end
@@ -104,9 +105,9 @@ run(function()
 				CircleObject.Visible = callback and Mode.Value == 'Mouse'
 			end
 			if callback then
-				if Method.Value == 'Ray' then
+				if Method.Value == 'Ray' and not rayHookInstalled then
 					oldray = hookfunction(Ray.new, function(origin, direction)
-						if checkcaller() then
+						if checkcaller() or not SilentAim.Enabled or Method.Value ~= 'Ray' then
 							return oldray(origin, direction)
 						end
 						local calling = getcallingscript()
@@ -122,9 +123,10 @@ run(function()
 						Hooks.Ray(args)
 						return oldray(unpack(args))
 					end)
-				else
+					rayHookInstalled = true
+				elseif Method.Value ~= 'Ray' and not namecallHookInstalled then
 					oldnamecall = hookmetamethod(game, '__namecall', function(...)
-						if getnamecallmethod() ~= Method.Value then
+						if not SilentAim.Enabled or Method.Value == 'Ray' or getnamecallmethod() ~= Method.Value then
 							return oldnamecall(...)
 						end
 						if checkcaller() then
@@ -146,6 +148,7 @@ run(function()
 						end
 						return oldnamecall(self, unpack(args))
 					end)
+					namecallHookInstalled = true
 				end
 
 				repeat
@@ -186,14 +189,17 @@ run(function()
 
 					task.wait()
 				until not SilentAim.Enabled
+				if mouseClicked then
+					pcall(mouse1release)
+					mouseClicked = false
+				end
 			else
-				if oldnamecall then
-					hookmetamethod(game, '__namecall', oldnamecall)
+				-- Replacing a live hook during teardown can race an in-flight call and
+				-- crash the client. Installed hooks safely pass through while disabled.
+				if mouseClicked then
+					pcall(mouse1release)
+					mouseClicked = false
 				end
-				if oldray then
-					hookfunction(Ray.new, oldray)
-				end
-				oldnamecall, oldray = nil, nil
 			end
 		end,
 		ExtraText = function()
@@ -315,6 +321,7 @@ run(function()
 					CircleObject.Visible = false
 					CircleObject:Remove()
 				end)
+				CircleObject = nil
 			end
 			CircleColor.Object.Visible = callback
 			CircleTransparency.Object.Visible = callback

@@ -11,7 +11,7 @@
   Rise up to the top while remaining completely untouchable.
 </h2>
 
-## Contacts
+## 7granddad contacts
 [Discord](https://discord.gg/VZEQJxMSnG)
 <br/>
 [Youtube](https://youtube.com/c/7GrandDadVape)
@@ -20,22 +20,13 @@
 1. Download the specific scripting utility of your choice.
 2. Execute the provided loadstring below.
 ```luau
-loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua", true))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/refs/heads/main/NewMainScript.lua", true))()
 ```
 
-## Possible Issues
-Half of the time its usually the scripting utility at fault, please make sure the utility meets certain quality standards such as.
-1. Supporting file functions & the debug library.
-2. Not implementing lua generated / half baked versions of such functions resulting in unintended behavior.
-3. Maintaining the same behavior across all usages of said functions.
-### User Issues
-If its not the supposed utility at fault, please try some troubleshooting steps.
-1. Deleting the newvape folder (WITH THE GAME CLOSED).
-2. Making sure you have connection to [the main loadstring.](https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/refs/heads/main/NewMainScript.lua)
-3. Ensuring no external script is conflicting with vape.
-
 ## Developers & Credits
-[7GrandDad](https://github.com/7GrandDadPGN) - Lead maintainer of the project - vaperoblox on Discord
+[7GrandDad](https://github.com/7GrandDadPGN) - Lead maintainer of the original project (sevgranddad on discord)
+<br/>
+[MiniMinusMan](https://github.com/MiniMinusMan-Official) - Lead maintainer of the original project (sevgranddad on discord)
 <br/>
 [rce-incorporated](https://github.com/rce-incorporated/Fiu) - Luau bytecode disassembly with modifications
 <br/>
