@@ -1,4 +1,4 @@
-name: Validate source bundle
+name: Validate source layout
 
 on:
   push:
@@ -13,13 +13,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Rebuild universal source bundle
-        run: node build-universal.mjs
-
-      - name: Verify generated bundle is current
-        run: git diff --exit-code -- src/games/universal.lua
+      - name: Verify split source layout
+        run: |
+          test -f 'src/games/universal - base/base.lua'
+          test -f 'src/guis/new/gui.lua'
+          test -f 'src/guis/new/components/Toggle.lua'
+          test ! -e 'src/games/universal.lua'
+          test ! -e 'src/guis/new.lua'

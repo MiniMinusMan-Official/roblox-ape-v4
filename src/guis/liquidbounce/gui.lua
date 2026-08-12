@@ -38,7 +38,7 @@ local httpService = cloneref(game:GetService('HttpService'))
 local fontsize = Instance.new('GetTextBoundsParams')
 fontsize.Width = math.huge
 local notifications
-local assetfunction = getcustomasset
+local assetfunction = getcustomasset or getsynasset
 local getcustomasset
 local clickgui
 local scaledgui
@@ -174,9 +174,12 @@ local function downloadFile(path, func)
 	if not isfile(path) then
 		createDownloader(path)
 		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/'..select(1, path:gsub('newvape/', '')), true)
+			local remotePath = select(1, path:gsub('newvape/', ''))
+			remotePath = remotePath:gsub('^assets/liquidbounce/', 'guis/liquidbounce/assets/')
+			return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/'..remotePath, true)
 		end)
 		if not suc or res == '404: Not Found' then
+			if getcustomassets[path] then return getcustomassets[path] end
 			error(res)
 		end
 		if path:find('.lua') then
@@ -188,7 +191,8 @@ local function downloadFile(path, func)
 end
 
 getcustomasset = not inputService.TouchEnabled and assetfunction and function(path)
-	return downloadFile(path, assetfunction)
+	local mapped = shared.VapeAssetPaths and shared.VapeAssetPaths[path]
+	return mapped and assetfunction(mapped) or downloadFile(path, assetfunction)
 end or function(path)
 	return getcustomassets[path] or ''
 end
@@ -261,14 +265,14 @@ end
 
 local function writeFont()
 	if not assetfunction then return 'rbxasset://fonts/inter.json' end
-	--[[writefile('newvape/assets/liquidbounce/lbfont.json', httpService:JSONEncode({
+	writefile('newvape/assets/liquidbounce/lbfont.json', httpService:JSONEncode({
 		name = 'Inter',
 		faces = {
 			{style = 'normal', assetId = getcustomasset('newvape/assets/liquidbounce/Inter-Light.ttf'), name = 'Light', weight = 300},
 			{style = 'normal', assetId = getcustomasset('newvape/assets/liquidbounce/Inter-Regular.ttf'), name = 'Regular', weight = 400},
 			{style = 'normal', assetId = getcustomasset('newvape/assets/liquidbounce/Inter-Medium.ttf'), name = 'Medium', weight = 500}
 		}
-	}))]]
+	}))
 	return getcustomasset('newvape/assets/liquidbounce/lbfont.json')
 end
 

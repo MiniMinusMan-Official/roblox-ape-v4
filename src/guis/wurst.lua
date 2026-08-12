@@ -31,7 +31,6 @@ local httpService = cloneref(game:GetService('HttpService'))
 local fontsize = Instance.new('GetTextBoundsParams')
 fontsize.Width = math.huge
 local notifications
-local assetfunction = getcustomasset or getsynasset
 local getcustomasset
 local clickgui
 local expanded
@@ -86,9 +85,8 @@ local function downloadFile(path, func)
 	return (func or readfile)(path)
 end
 
-getcustomasset = not inputService.TouchEnabled and assetfunction and function(path)
-	local mapped = shared.VapeAssetPaths and shared.VapeAssetPaths[path]
-	return mapped and assetfunction(mapped) or downloadFile(path, assetfunction)
+getcustomasset = not inputService.TouchEnabled and getcustomasset and function(path)
+	return downloadFile(path, getcustomasset)
 end or function(path)
 	return getcustomassets[path] or ''
 end
