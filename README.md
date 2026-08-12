@@ -26,7 +26,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/MiniMinusMan-Official
 ## Developers & Credits
 [7GrandDad](https://github.com/7GrandDadPGN) - Lead maintainer of the original project (sevgranddad on discord)
 <br/>
-[MiniMinusMan](https://github.com/MiniMinusMan-Official) - Lead maintainer of the original project (sevgranddad on discord)
+[MiniMinusMan](https://github.com/MiniMinusMan-Official) - absolute moron who cant even code whos trying to make certain features work better for pot(ass)ium
 <br/>
 [rce-incorporated](https://github.com/rce-incorporated/Fiu) - Luau bytecode disassembly with modifications
 <br/>
