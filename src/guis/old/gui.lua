@@ -221,9 +221,12 @@ local function downloadFile(path, func)
 	if not isfile(path) then
 		createDownloader(path)
 		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/'..select(1, path:gsub('newvape/', '')), true)
+			local remotePath = select(1, path:gsub('newvape/', ''))
+			remotePath = remotePath:gsub('^assets/old/', 'guis/old/assets/')
+			return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/'..remotePath, true)
 		end)
 		if not suc or res == '404: Not Found' then
+			if getcustomassets[path] then return getcustomassets[path] end
 			error(res)
 		end
 		if path:find('.lua') then
