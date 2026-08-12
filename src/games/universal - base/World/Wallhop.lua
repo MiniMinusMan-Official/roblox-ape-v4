@@ -1,22 +1,17 @@
 local Wallhop
 local Offset
-local HumanizedFlick
+local funnyflick
+local FlickOutTime
+local FlickHoldTime
+local FlickReturnTime
 
 local params = OverlapParams.new()
 params.RespectCanCollide = true
 
 local timeout = os.clock()
-
--- Original one-frame flick state
 local set
-
--- Humanized flick state
 local flickStarted
 local flickApplied = 0
-
-local flickOutTime = 0.055
-local flickHoldTime = 0.025
-local flickReturnTime = 0.065
 
 local function smoothStep(value)
 	value = math.clamp(value, 0, 1)
@@ -25,33 +20,26 @@ end
 
 local function restoreCamera()
 	if set then
-		gameCamera.CFrame = CFrame.new(
-			gameCamera.CFrame.Position.X,
-			gameCamera.CFrame.Position.Y,
-			gameCamera.CFrame.Position.Z,
-			unpack(set, 4, set.n)
-		)
-
+		gameCamera.CFrame = CFrame.new(gameCamera.CFrame.Position.X, gameCamera.CFrame.Position.Y, gameCamera.CFrame.Position.Z, unpack(set, 4, set.n))
 		set = nil
 	end
 
 	if flickApplied ~= 0 then
-		gameCamera.CFrame *= CFrame.Angles(
-			0,
-			math.rad(-flickApplied),
-			0
-		)
-
+		gameCamera.CFrame *= CFrame.Angles(0, math.rad(-flickApplied), 0)
 		flickApplied = 0
 	end
 
 	flickStarted = nil
 end
 
-local function updateHumanizedFlick()
+local function updateFunnyFlick()
 	if not flickStarted then
 		return false
 	end
+
+	local flickOutTime = FlickOutTime.Value
+	local flickHoldTime = FlickHoldTime.Value
+	local flickReturnTime = FlickReturnTime.Value
 
 	local elapsed = os.clock() - flickStarted
 	local returnStart = flickOutTime + flickHoldTime
@@ -64,10 +52,7 @@ local function updateHumanizedFlick()
 	elseif elapsed < returnStart then
 		desiredAngle = Offset.Value
 	elseif elapsed < totalTime then
-		local progress = smoothStep(
-			(elapsed - returnStart) / flickReturnTime
-		)
-
+		local progress = smoothStep((elapsed - returnStart) / flickReturnTime)
 		desiredAngle = Offset.Value * (1 - progress)
 	else
 		desiredAngle = 0
@@ -76,11 +61,7 @@ local function updateHumanizedFlick()
 	local angleChange = desiredAngle - flickApplied
 
 	if angleChange ~= 0 then
-		gameCamera.CFrame *= CFrame.Angles(
-			0,
-			math.rad(angleChange),
-			0
-		)
+		gameCamera.CFrame *= CFrame.Angles(0, math.rad(angleChange), 0)
 	end
 
 	flickApplied = desiredAngle
@@ -96,71 +77,33 @@ end
 
 local function doCheck()
 	if set then
-		gameCamera.CFrame = CFrame.new(
-			gameCamera.CFrame.Position.X,
-			gameCamera.CFrame.Position.Y,
-			gameCamera.CFrame.Position.Z,
-			unpack(set, 4, set.n)
-		)
-
+		gameCamera.CFrame = CFrame.new(gameCamera.CFrame.Position.X, gameCamera.CFrame.Position.Y, gameCamera.CFrame.Position.Z, unpack(set, 4, set.n))
 		set = nil
 	end
 
-	-- Continue an existing humanized flick before checking for another hop.
-	if updateHumanizedFlick() then
+	if updateFunnyFlick() then
 		return
 	end
 
-	local hum = entitylib.isAlive
-		and entitylib.character.Humanoid
-
-	if not (
-		hum
-		and hum.Jump
-		and hum.MoveDirection.Magnitude > 0
-	) then
+	local hum = entitylib.isAlive and entitylib.character.Humanoid
+	if not (hum and hum.Jump and hum.MoveDirection.Magnitude > 0) then
 		return
 	end
 
 	local root = entitylib.character.RootPart
-
 	params.CollisionGroup = root.CollisionGroup
-	params.FilterDescendantsInstances = {
-		lplr.Character
-	}
+	params.FilterDescendantsInstances = {lplr.Character}
 
-	if root.AssemblyLinearVelocity.Y >= 0 then
+	if root.AssemblyLinearVelocity.Y >= 0 or hum.FloorMaterial ~= Enum.Material.Air then
 		return
 	end
 
-	if hum.FloorMaterial ~= Enum.Material.Air then
-		return
-	end
-
-	local parts = workspace:GetPartBoundsInBox(
-		CFrame.new(
-			root.Position
-				- Vector3.new(
-					0,
-					entitylib.character.HipHeight / 2,
-					0
-				)
-		),
-		Vector3.new(
-			3,
-			entitylib.character.HipHeight,
-			3
-		),
-		params
-	)
+	local parts = workspace:GetPartBoundsInBox(CFrame.new(root.Position - Vector3.new(0, entitylib.character.HipHeight / 2, 0)), Vector3.new(3, entitylib.character.HipHeight, 3), params )
 
 	local doHop = false
 
 	for _, part in parts do
-		local position = part:GetClosestPointOnSurface(
-			root.Position
-		)
-
+		local position = part:GetClosestPointOnSurface(root.Position)
 		local difference = root.Position.Y - position.Y
 
 		if difference > root.Size.Y / 2 then
@@ -173,21 +116,12 @@ local function doCheck()
 		return
 	end
 
-	if HumanizedFlick.Enabled then
-		-- Perform the same camera flick gradually over several frames.
+	if funnyflick.Enabled then
 		flickStarted = os.clock()
 		flickApplied = 0
 	else
-		-- Original instant one-frame flick.
-		set = table.pack(
-			gameCamera.CFrame:GetComponents()
-		)
-
-		gameCamera.CFrame *= CFrame.Angles(
-			0,
-			math.rad(Offset.Value),
-			0
-		)
+		set = table.pack(gameCamera.CFrame:GetComponents())
+		gameCamera.CFrame *= CFrame.Angles(0, math.rad(Offset.Value), 0)
 	end
 
 	timeout = os.clock()
@@ -195,25 +129,17 @@ end
 
 Wallhop = vape.Categories.World:CreateModule({
 	Name = 'Wallhop',
-
 	Function = function(callback)
 		if callback then
-			if workspace.AuthorityMode
-				== Enum.AuthorityMode.Server then
-
-				Wallhop:Clean(
-					runService:BindToSimulation(doCheck)
-				)
+			if workspace.AuthorityMode == Enum.AuthorityMode.Server then
+				Wallhop:Clean(runService:BindToSimulation(doCheck))
 			else
-				Wallhop:Clean(
-					runService.RenderStepped:Connect(doCheck)
-				)
+				Wallhop:Clean(runService.RenderStepped:Connect(doCheck))
 			end
 		else
 			restoreCamera()
 		end
 	end,
-
 	Tooltip = 'Automatically performs the camera flick needed for wallhopping.'
 })
 
@@ -225,12 +151,46 @@ Offset = Wallhop:CreateSlider({
 	Suffix = 'degrees'
 })
 
-HumanizedFlick = Wallhop:CreateToggle({
+funnyflick = Wallhop:CreateToggle({
 	Name = 'better wallhop',
-
-	Function = function()
+	Function = function(callback)
+		FlickOutTime.Object.Visible = callback
+		FlickHoldTime.Object.Visible = callback
+		FlickReturnTime.Object.Visible = callback
 		restoreCamera()
 	end,
-
 	Tooltip = 'same logic but more human ig'
+})
+
+FlickOutTime = Wallhop:CreateSlider({
+	Name = 'Flick Out Time',
+	Min = 0.01,
+	Max = 0.05,
+	Default = 0.035,
+	Decimal = 1000,
+	Darker = true,
+	Visible = false,
+	Suffix = 's'
+})
+
+FlickHoldTime = Wallhop:CreateSlider({
+	Name = 'Flick Hold Time',
+	Min = 0.01,
+	Max = 0.05,
+	Default = 0.01,
+	Decimal = 1000,
+	Darker = true,
+	Visible = false,
+	Suffix = 's'
+})
+
+FlickReturnTime = Wallhop:CreateSlider({
+	Name = 'Flick Return Time',
+	Min = 0.01,
+	Max = 0.05,
+	Default = 0.04,
+	Decimal = 1000,
+	Darker = true,
+	Visible = false,
+	Suffix = 's'
 })
