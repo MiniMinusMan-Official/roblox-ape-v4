@@ -21,25 +21,18 @@ run(function()
 	local Projectile
 	local ProjectileSpeed
 	local ProjectileGravity
-
 	local RaycastWhitelist = RaycastParams.new()
 	RaycastWhitelist.FilterType = Enum.RaycastFilterType.Include
-
 	local ProjectileRaycast = RaycastParams.new()
 	ProjectileRaycast.RespectCanCollide = true
-
 	local fireoffset, rand, delayCheck = CFrame.identity, Random.new(), tick()
 	local oldnamecall, oldray
 	local namecallHookInstalled, rayHookInstalled = false, false
 
 	local function getTarget(origin, obj)
-		local hitChance = AutoFire.Enabled and 100 or HitChance.Value
-		if rand:NextNumber(0, 100) > hitChance then
-			return
-		end
+		if rand.NextNumber(rand, 0, 100) > (AutoFire.Enabled and 100 or HitChance.Value) then return end
 
-		-- Always locate entities using RootPart, matching AimAssist's stable
-		-- targeting. Headshot chance is applied after an entity is selected.
+		-- Always select the player by RootPart, matching AimAssist.
 		local ent = entitylib['Entity'..Mode.Value]({
 			Range = Range.Value,
 			Wallcheck = Target.Walls.Enabled and (obj or true) or nil,
@@ -49,181 +42,69 @@ run(function()
 			NPCs = Target.NPCs.Enabled
 		})
 
-		if not ent then
-			return
-		end
+		if not ent then return end
 
-		local headshotChance = AutoFire.Enabled and 100 or HeadshotChance.Value
-		local headshot = rand:NextNumber(0, 100) < headshotChance
+		-- Choose the actual hit part after finding a valid player.
+		local headshot = rand.NextNumber(rand, 0, 100) < (AutoFire.Enabled and 100 or HeadshotChance.Value)
 		local targetPart = headshot and ent.Head or ent.RootPart
 		targetPart = targetPart or ent.RootPart or ent.Head
 
-		if not targetPart then
-			return
-		end
+		if not targetPart then return end
 
 		targetinfo.Targets[ent] = tick() + 1
 
 		if Projectile.Enabled then
-			ProjectileRaycast.FilterDescendantsInstances = {
-				gameCamera,
-				ent.Character
-			}
+			ProjectileRaycast.FilterDescendantsInstances = {gameCamera, ent.Character}
 			ProjectileRaycast.CollisionGroup = targetPart.CollisionGroup
 		end
 
 		return ent, targetPart, origin
 	end
 
-	local function redirectLegacyRay(args, ignoreList)
-		local ray = args[1]
-		if not ray then
-			return
-		end
-
-		local ent, targetPart, origin = getTarget(ray.Origin, ignoreList)
-		if not ent then
-			return
-		end
-
-		if Wallbang.Enabled then
-			return {
-				targetPart,
-				targetPart.Position,
-				targetPart:GetClosestPointOnSurface(origin),
-				targetPart.Material
-			}
-		end
-
-		args[1] = Ray.new(
-			origin,
-			CFrame.lookAt(origin, targetPart.Position).LookVector
-				* ray.Direction.Magnitude
-		)
-	end
-
 	local Hooks = {
 		FindPartOnRayWithIgnoreList = function(args)
-			-- args[2] already contains the ignore list. The old code wrapped
-			-- it in another table, producing an invalid nested ignore list.
-			local ignoreList = type(args[2]) == 'table' and args[2] or nil
-			return redirectLegacyRay(args, ignoreList)
-		end,
-
-		FindPartOnRayWithWhitelist = function(args)
-			-- A whitelist must not be treated as an ignore list.
-			return redirectLegacyRay(args)
-		end,
-
-		FindPartOnRay = function(args)
-			return redirectLegacyRay(args)
-		end,
-
-		Raycast = function(args)
-			if MethodRay.Value ~= 'All' and args[3] and args[3].FilterType ~= Enum.RaycastFilterType[MethodRay.Value] then
-				return
-			end
-
-			local ent, targetPart, origin = getTarget(args[1])
-			if not ent then
-				return
-			end
-
-			args[2] = CFrame.lookAt(
-				origin,
-				targetPart.Position
-			).LookVector * args[2].Magnitude
-
+			local ent, targetPart, origin = getTarget(args[1].Origin, {args[2]})
+			if not ent then return end
 			if Wallbang.Enabled then
-				RaycastWhitelist.FilterDescendantsInstances = {
-					targetPart
-				}
+				return {targetPart, targetPart.Position, targetPart.GetClosestPointOnSurface(targetPart, origin), targetPart.Material}
+			end
+			args[1] = Ray.new(origin, CFrame.lookAt(origin, targetPart.Position).LookVector * args[1].Direction.Magnitude)
+		end,
+		Raycast = function(args)
+			if MethodRay.Value ~= 'All' and args[3] and args[3].FilterType ~= Enum.RaycastFilterType[MethodRay.Value] then return end
+			local ent, targetPart, origin = getTarget(args[1])
+			if not ent then return end
+			args[2] = CFrame.lookAt(origin, targetPart.Position).LookVector * args[2].Magnitude
+			if Wallbang.Enabled then
+				RaycastWhitelist.FilterDescendantsInstances = {targetPart}
 				args[3] = RaycastWhitelist
 			end
 		end,
-
 		ScreenPointToRay = function(args)
-			local ent, targetPart, origin = getTarget(
-				gameCamera.CFrame.Position
-			)
-
-			if not ent then
-				return
-			end
-
-			local direction = CFrame.lookAt(
-				origin,
-				targetPart.Position
-			)
-
+			local ent, targetPart, origin = getTarget(gameCamera.CFrame.Position)
+			if not ent then return end
+			local direction = CFrame.lookAt(origin, targetPart.Position)
 			if Projectile.Enabled then
-				local calc = prediction.SolveTrajectory(
-					origin,
-					ProjectileSpeed.Value,
-					ProjectileGravity.Value,
-					targetPart.Position,
-					targetPart.Velocity,
-					workspace.Gravity,
-					ent.HipHeight,
-					nil,
-					ProjectileRaycast
-				)
-
-				if not calc then
-					return
-				end
-
+				local calc = prediction.SolveTrajectory(origin, ProjectileSpeed.Value, ProjectileGravity.Value, targetPart.Position, targetPart.Velocity, workspace.Gravity, ent.HipHeight, nil, ProjectileRaycast)
+				if not calc then return end
 				direction = CFrame.lookAt(origin, calc)
 			end
-
-			return {
-				Ray.new(
-					origin + (
-						args[3]
-						and direction.LookVector * args[3]
-						or Vector3.zero
-					),
-					direction.LookVector
-				)
-			}
+			return {Ray.new(origin + (args[3] and direction.LookVector * args[3] or Vector3.zero), direction.LookVector)}
 		end,
-
 		Ray = function(args)
 			local ent, targetPart, origin = getTarget(args[1])
-			if not ent then
-				return
-			end
-
+			if not ent then return end
 			if Projectile.Enabled then
-				local calc = prediction.SolveTrajectory(
-					origin,
-					ProjectileSpeed.Value,
-					ProjectileGravity.Value,
-					targetPart.Position,
-					targetPart.Velocity,
-					workspace.Gravity,
-					ent.HipHeight,
-					nil,
-					ProjectileRaycast
-				)
-
-				if not calc then
-					return
-				end
-
-				args[2] = CFrame.lookAt(
-					origin,
-					calc
-				).LookVector * args[2].Magnitude
+				local calc = prediction.SolveTrajectory(origin, ProjectileSpeed.Value, ProjectileGravity.Value, targetPart.Position, targetPart.Velocity, workspace.Gravity, ent.HipHeight, nil, ProjectileRaycast)
+				if not calc then return end
+				args[2] = CFrame.lookAt(origin, calc).LookVector * args[2].Magnitude
 			else
-				args[2] = CFrame.lookAt(
-					origin,
-					targetPart.Position
-				).LookVector * args[2].Magnitude
+				args[2] = CFrame.lookAt(origin, targetPart.Position).LookVector * args[2].Magnitude
 			end
 		end
 	}
-
+	Hooks.FindPartOnRayWithWhitelist = Hooks.FindPartOnRayWithIgnoreList
+	Hooks.FindPartOnRay = Hooks.FindPartOnRayWithIgnoreList
 	Hooks.ViewportPointToRay = Hooks.ScreenPointToRay
 
 	SilentAim = vape.Categories.Combat:CreateModule({
@@ -232,76 +113,50 @@ run(function()
 			if CircleObject then
 				CircleObject.Visible = callback and Mode.Value == 'Mouse'
 			end
-
 			if callback then
 				if Method.Value == 'Ray' and not rayHookInstalled then
 					oldray = hookfunction(Ray.new, function(origin, direction)
 						if checkcaller() or not SilentAim.Enabled or Method.Value ~= 'Ray' then
 							return oldray(origin, direction)
 						end
-
 						local calling = getcallingscript()
 
 						if calling then
-							local list = #IgnoredScripts.ListEnabled > 0
-								and IgnoredScripts.ListEnabled
-								or {'ControlScript', 'ControlModule'}
-
+							local list = #IgnoredScripts.ListEnabled > 0 and IgnoredScripts.ListEnabled or {'ControlScript', 'ControlModule'}
 							if table.find(list, tostring(calling)) then
 								return oldray(origin, direction)
 							end
 						end
 
-						local args = {
-							origin,
-							direction
-						}
-
+						local args = {origin, direction}
 						Hooks.Ray(args)
 						return oldray(unpack(args))
 					end)
-
 					rayHookInstalled = true
 				elseif Method.Value ~= 'Ray' and not namecallHookInstalled then
 					oldnamecall = hookmetamethod(game, '__namecall', function(...)
 						if not SilentAim.Enabled or Method.Value == 'Ray' or getnamecallmethod() ~= Method.Value then
 							return oldnamecall(...)
 						end
-
 						if checkcaller() then
 							return oldnamecall(...)
 						end
 
 						local calling = getcallingscript()
-
 						if calling then
-							local list = #IgnoredScripts.ListEnabled > 0
-								and IgnoredScripts.ListEnabled
-								or {'ControlScript', 'ControlModule'}
-
+							local list = #IgnoredScripts.ListEnabled > 0 and IgnoredScripts.ListEnabled or {'ControlScript', 'ControlModule'}
 							if table.find(list, tostring(calling)) then
 								return oldnamecall(...)
 							end
 						end
 
-						local self, args = ..., {
-							select(2, ...)
-						}
-
-						local hook = Hooks[Method.Value]
-						if not hook then
-							return oldnamecall(self, unpack(args))
-						end
-
-						local res = hook(args)
-
+						local self, args = ..., {select(2, ...)}
+						local res = Hooks[Method.Value](args)
 						if res then
 							return unpack(res)
 						end
-
 						return oldnamecall(self, unpack(args))
 					end)
-
 					namecallHookInstalled = true
 				end
 
@@ -311,14 +166,7 @@ run(function()
 					end
 
 					if AutoFire.Enabled then
-						local origin = AutoFireMode.Value == 'Camera'
-							and gameCamera.CFrame
-							or entitylib.isAlive
-							and entitylib.character.RootPart.CFrame
-							or CFrame.identity
-
-						-- Use RootPart for AutoFire detection too. getTarget()
-						-- will decide whether the actual shot targets the head.
+						local origin = AutoFireMode.Value == 'Camera' and gameCamera.CFrame or entitylib.isAlive and entitylib.character.RootPart.CFrame or CFrame.identity
 						local ent = entitylib['Entity'..Mode.Value]({
 							Range = Range.Value,
 							Wallcheck = Target.Walls.Enabled or nil,
@@ -333,19 +181,16 @@ run(function()
 								if delayCheck < tick() then
 									if mouseClicked then
 										mouse1release()
-										delayCheck = tick()
-											+ AutoFireShootDelay.Value
+										delayCheck = tick() + AutoFireShootDelay.Value
 									else
 										mouse1press()
 									end
-
 									mouseClicked = not mouseClicked
 								end
 							else
 								if mouseClicked then
 									mouse1release()
 								end
-
 								mouseClicked = false
 							end
 						end
@@ -359,76 +204,49 @@ run(function()
 					mouseClicked = false
 				end
 			else
-				-- Do not replace installed hooks during teardown. Replacing a
-				-- hook while another thread is using it can crash the client.
-				-- The installed hooks safely pass through while disabled.
+				-- Leave installed hooks in place during teardown. They pass
+				-- through safely while SilentAim is disabled.
 				if mouseClicked then
 					pcall(mouse1release)
 					mouseClicked = false
 				end
 			end
 		end,
-
 		ExtraText = function()
 			return Method.Value:gsub('FindPartOnRay', '')
 		end,
-
 		Tooltip = 'Silently adjusts your aim towards the enemy'
 	})
 
-	Target = SilentAim:CreateTargets({
-		Players = true
-	})
+	Target = SilentAim:CreateTargets({Players = true})
 
 	Mode = SilentAim:CreateDropdown({
 		Name = 'Mode',
-		List = {
-			'Mouse',
-			'Position'
-		},
-
+		List = {'Mouse', 'Position'},
 		Function = function(val)
 			if CircleObject then
-				CircleObject.Visible = SilentAim.Enabled
-					and val == 'Mouse'
+				CircleObject.Visible = SilentAim.Enabled and val == 'Mouse'
 			end
 		end,
-
 		Tooltip = 'Mouse - Checks for entities near the mouses position\nPosition - Checks for entities near the local character'
 	})
 
 	Method = SilentAim:CreateDropdown({
 		Name = 'Method',
-
-		List = {
-			'FindPartOnRay',
-			'FindPartOnRayWithIgnoreList',
-			'FindPartOnRayWithWhitelist',
-			'ScreenPointToRay',
-			'ViewportPointToRay',
-			'Raycast',
-			'Ray'
-		},
-
+		List = {'FindPartOnRay', 'FindPartOnRayWithIgnoreList', 'FindPartOnRayWithWhitelist', 'ScreenPointToRay', 'ViewportPointToRay', 'Raycast', 'Ray'},
 		Function = function(val)
 			if SilentAim.Enabled then
 				SilentAim:Toggle()
 				SilentAim:Toggle()
 			end
-
 			MethodRay.Object.Visible = val == 'Raycast'
 		end,
-
 		Tooltip = 'FindPartOnRay* - Deprecated methods of raycasting used in old games\nRaycast - The modern raycast method\nPointToRay - Method to generate a ray from screen coords\nRay - Hooking Ray.new'
 	})
 
 	MethodRay = SilentAim:CreateDropdown({
 		Name = 'Raycast Type',
-		List = {
-			'All',
-			'Exclude',
-			'Include'
-		},
+		List = {'All', 'Exclude', 'Include'},
 		Darker = true,
 		Visible = false
 	})
@@ -442,13 +260,11 @@ run(function()
 		Min = 1,
 		Max = 1000,
 		Default = 150,
-
 		Function = function(val)
 			if CircleObject then
 				CircleObject.Radius = val
 			end
 		end,
-
 		Suffix = function(val)
 			return val == 1 and 'stud' or 'studs'
 		end
@@ -472,7 +288,6 @@ run(function()
 
 	AutoFire = SilentAim:CreateToggle({
 		Name = 'AutoFire',
-
 		Function = function(callback)
 			AutoFireShootDelay.Object.Visible = callback
 			AutoFireMode.Object.Visible = callback
@@ -487,7 +302,6 @@ run(function()
 		Decimal = 100,
 		Visible = false,
 		Darker = true,
-
 		Suffix = function(val)
 			return val == 1 and 'second' or 'seconds'
 		end
@@ -495,10 +309,7 @@ run(function()
 
 	AutoFireMode = SilentAim:CreateDropdown({
 		Name = 'Origin',
-		List = {
-			'RootPart',
-			'Camera'
-		},
+		List = {'RootPart', 'Camera'},
 		Visible = false,
 		Darker = true,
 		Tooltip = 'Determines the position to check for before shooting'
@@ -506,19 +317,12 @@ run(function()
 
 	AutoFirePosition = SilentAim:CreateTextBox({
 		Name = 'Offset',
-
 		Function = function()
 			local suc, res = pcall(function()
-				return CFrame.new(
-					unpack(AutoFirePosition.Value:split(','))
-				)
+				return CFrame.new(unpack(AutoFirePosition.Value:split(',')))
 			end)
-
-			if suc then
-				fireoffset = res
-			end
+			if suc then fireoffset = res end
 		end,
-
 		Default = '0, 0, 0',
 		Visible = false,
 		Darker = true
@@ -530,32 +334,23 @@ run(function()
 
 	SilentAim:CreateToggle({
 		Name = 'Range Circle',
-
 		Function = function(callback)
 			if callback then
 				CircleObject = Drawing.new('Circle')
 				CircleObject.Filled = CircleFilled.Enabled
-				CircleObject.Color = Color3.fromHSV(
-					CircleColor.Hue,
-					CircleColor.Sat,
-					CircleColor.Value
-				)
+				CircleObject.Color = Color3.fromHSV(CircleColor.Hue, CircleColor.Sat, CircleColor.Value)
 				CircleObject.Position = vape.gui.AbsoluteSize / 2
 				CircleObject.Radius = Range.Value
 				CircleObject.NumSides = 100
-				CircleObject.Transparency = 1
-					- CircleTransparency.Value
-				CircleObject.Visible = SilentAim.Enabled
-					and Mode.Value == 'Mouse'
+				CircleObject.Transparency = 1 - CircleTransparency.Value
+				CircleObject.Visible = SilentAim.Enabled and Mode.Value == 'Mouse'
 			else
 				pcall(function()
 					CircleObject.Visible = false
 					CircleObject:Remove()
 				end)
-
 				CircleObject = nil
 			end
-
 			CircleColor.Object.Visible = callback
 			CircleTransparency.Object.Visible = callback
 			CircleFilled.Object.Visible = callback
@@ -564,17 +359,11 @@ run(function()
 
 	CircleColor = SilentAim:CreateColorSlider({
 		Name = 'Circle Color',
-
 		Function = function(hue, sat, val)
 			if CircleObject then
-				CircleObject.Color = Color3.fromHSV(
-					hue,
-					sat,
-					val
-				)
+				CircleObject.Color = Color3.fromHSV(hue, sat, val)
 			end
 		end,
-
 		Darker = true,
 		Visible = false
 	})
@@ -585,33 +374,28 @@ run(function()
 		Max = 1,
 		Decimal = 10,
 		Default = 0.5,
-
 		Function = function(val)
 			if CircleObject then
 				CircleObject.Transparency = 1 - val
 			end
 		end,
-
 		Darker = true,
 		Visible = false
 	})
 
 	CircleFilled = SilentAim:CreateToggle({
 		Name = 'Circle Filled',
-
 		Function = function(callback)
 			if CircleObject then
 				CircleObject.Filled = callback
 			end
 		end,
-
 		Darker = true,
 		Visible = false
 	})
 
 	Projectile = SilentAim:CreateToggle({
 		Name = 'Projectile',
-
 		Function = function(callback)
 			ProjectileSpeed.Object.Visible = callback
 			ProjectileGravity.Object.Visible = callback
@@ -625,7 +409,6 @@ run(function()
 		Default = 1000,
 		Darker = true,
 		Visible = false,
-
 		Suffix = function(val)
 			return val == 1 and 'stud' or 'studs'
 		end
