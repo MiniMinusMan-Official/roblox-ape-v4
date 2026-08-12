@@ -4,6 +4,7 @@ local Options
 local AutoJump
 local AutoJumpCustom
 local AutoJumpValue
+local CustomProperties
 local w, s, a, d = 0, 0, 0, 0
 
 Speed = vape.Categories.Blatant:CreateModule({
@@ -13,7 +14,9 @@ Speed = vape.Categories.Blatant:CreateModule({
 		updateVelocity()
 		if callback then
 			Speed:Clean(runService.PreSimulation:Connect(function(dt)
-				if entitylib.isAlive and not Fly.Enabled and not LongJump.Enabled then
+				local fly = vape.Modules.Fly
+				local longJump = vape.Modules.LongJump
+				if entitylib.isAlive and not (fly and fly.Enabled) and not (longJump and longJump.Enabled) then
 					local state = entitylib.character.Humanoid:GetState()
 					if state == Enum.HumanoidStateType.Climbing then return end
 
