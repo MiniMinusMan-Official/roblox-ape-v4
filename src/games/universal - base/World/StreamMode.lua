@@ -49,6 +49,7 @@ StreamerMode = vape.Categories.World:CreateModule({
 					part.Color = Color3.fromRGB(math.random(1, 255), math.random(1, 255), math.random(1, 255))
 				end
 			end 
+			StreamerMode.Enabled = false
 		else end
 	end
 })
