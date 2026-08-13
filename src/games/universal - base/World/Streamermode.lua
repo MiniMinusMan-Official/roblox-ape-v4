@@ -78,7 +78,7 @@ StreamerMode = vape.Categories.Blatant:CreateModule({
 	end
 })
 
-fakename = PlayerModel:CreateTextBox({
+fakename = StreamerMode:CreateTextBox({
 	Name = 'Fake name',
 	Placeholder = 'text here',
 	Function = function(val)
