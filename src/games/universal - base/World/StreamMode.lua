@@ -24,17 +24,17 @@ StreamerMode = vape.Categories.World:CreateModule({
 			local cha = e()
 
 			function changeText(n)
-			    plr.Name, plr.DisplayName = "robolx", "robolx"
+			    plr.Name, plr.DisplayName = "ape_user", "ape_user"
 				if n:IsA("TextLabel") or n:IsA("TextButton") or n:IsA("TextBox") then
-					if n.Text:lower():find(display:lower()) and not n.Text:find("robolx") then
-						n.Text = n.Text:lower():gsub(display:lower(), "robolx")
+					if n.Text:lower():find(display:lower()) and not n.Text:find("ape_user") then
+						n.Text = n.Text:lower():gsub(display:lower(), "ape_user")
 					end
-					if n.Text:lower():find(name:lower()) and not n.Text:find("robolx") then
-						n.Text = n.Text:gsub(name:lower(), "robolx")
+					if n.Text:lower():find(name:lower()) and not n.Text:find("ape_user") then
+						n.Text = n.Text:gsub(name:lower(), "ape_user")
 					end
 				end
 			end
-			plr.Name, plr.DisplayName = "robolx", "robolx"
+			plr.Name, plr.DisplayName = "ape_user", "ape_user"
 			for i, v in next, game:GetDescendants() do
 				changeText(v)
 			end
