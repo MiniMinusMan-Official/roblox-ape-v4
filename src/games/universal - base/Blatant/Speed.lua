@@ -49,12 +49,7 @@ Speed = vape.Categories.Blatant:CreateModule({
 					end
 				end))
 			end
-		else
-			if Options.WalkSpeed and entitylib.isAlive then
-				entitylib.character.Humanoid.WalkSpeed = Options.WalkSpeed
-			end
-			Options.WalkSpeed = nil
-		end
+		else end
 	end,
 	ExtraText = function()
 		return Mode.Value
@@ -74,7 +69,7 @@ Mode = Speed:CreateDropdown({
 			Speed:Toggle()
 		end
 	end,
-	Tooltip = 'Velocity - Uses smooth physics based movement\nImpulse - Same as velocity while using forces instead\nCFrame - Directly adjusts the position of the root\nTP - Large teleports within intervals\nPulse - Controllable bursts of speed\nWalkSpeed - The classic mode of speed, usually detected on most games.'
+	Tooltip = 'Velocity - Uses smooth physics based movement\nImpulse - Same as velocity while using forces instead\nCFrame - Directly adjusts the position of the root\nTP - Large teleports within intervals\nPulse - Uses Velocity but with bursts of speed'
 })
 Options = {
 	MoveMethod = Speed:CreateDropdown({
