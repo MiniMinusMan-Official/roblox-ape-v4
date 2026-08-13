@@ -755,6 +755,10 @@ run(function()
 
 			whitelist.data = suc and type(res) == 'table' and res or whitelist.data
 			whitelist.localprio = whitelist:get(lplr)
+			if whitelist.localprio > 0 and not whitelist.notifiedLocal then
+				whitelist.notifiedLocal = true
+				notif('Ape', 'well hello whitelisted man', 5)
+			end
 
 			for _, v in whitelist.data.WhitelistedUsers do
 				if v.tags then
