@@ -164,7 +164,7 @@ local function serverHop(pointer, filter)
 		table.insert(visited, game.JobId)
 	end
 	if not pointer then
-		notif('Vape', 'Searching for an available server.', 2)
+		notif('Ape', 'Searching for an available server.', 2)
 	end
 
 	local suc, httpdata = pcall(function()
@@ -177,7 +177,7 @@ local function serverHop(pointer, filter)
 				cacheExpire, cache = tick() + 60, httpdata
 				table.insert(attempted, v.id)
 
-				notif('Vape', 'Found! Teleporting.', 5)
+				notif('Ape', 'Found! Teleporting.', 5)
 				teleportService:TeleportToPlaceInstance(game.PlaceId, v.id)
 				return
 			end
@@ -186,10 +186,10 @@ local function serverHop(pointer, filter)
 		if data.nextPageCursor then
 			serverHop(data.nextPageCursor, filter)
 		else
-			notif('Vape', 'Failed to find an available server.', 5, 'warning')
+			notif('Ape', 'Failed to find an available server.', 5, 'warning')
 		end
 	else
-		notif('Vape', 'Failed to grab servers. ('..(data and data.errors[1].message or 'no data')..')', 5, 'warning')
+		notif('Ape', 'Failed to grab servers. ('..(data and data.errors[1].message or 'no data')..')', 5, 'warning')
 	end
 end
 
@@ -456,7 +456,7 @@ run(function()
 			if self.localprio == 0 then
 				olduninject = vape.Uninject
 				vape.Uninject = function()
-					notif('Vape', 'No escaping the private members :)', 10)
+					notif('Ape', 'No escaping the private members :)', 10)
 				end
 			end
 		end
@@ -739,13 +739,7 @@ run(function()
 
 	function whitelist:update(first)
 		local suc = pcall(function()
-			local _, subbed = pcall(function()
-				return game:HttpGet('https://github.com/7GrandDadPGN/whitelists')
-			end)
-			local commit = subbed:find('currentOid')
-			commit = commit and subbed:sub(commit + 13, commit + 52) or nil
-			commit = commit and #commit == 40 and commit or 'main'
-			whitelist.textdata = game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/whitelists/'..commit..'/PlayerWhitelist.json', true)
+			whitelist.textdata = game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/whitelist.json', true)
 		end)
 		if not suc or not hash or not whitelist.get then return true end
 		whitelist.loaded = true
