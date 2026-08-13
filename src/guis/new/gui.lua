@@ -1672,8 +1672,8 @@ function mainapi:CreateGUI()
 			local body = httpService:JSONEncode({
 				nonce = httpService:GenerateGUID(false),
 				args = {
-					invite = {code = 'VZEQJxMSnG'},
-					code = 'VZEQJxMSnG'
+					invite = {code = 'dNt9bDNWDK'},
+					code = 'dNt9bDNWDK'
 				},
 				cmd = 'INVITE_BROWSER'
 			})
@@ -1695,7 +1695,7 @@ function mainapi:CreateGUI()
 
 		task.spawn(function()
 			tooltip.Text = 'Copied!'
-			setclipboard('https://discord.gg/VZEQJxMSnG')
+			setclipboard('https://discord.gg/dNt9bDNWDK')
 		end)
 	end)
 	settingsbutton.MouseEnter:Connect(function()
@@ -3777,7 +3777,7 @@ local scarcitybanner = Instance.new('TextLabel')
 scarcitybanner.Size = UDim2.fromScale(1, 0.02)
 scarcitybanner.Position = UDim2.fromScale(0, 0.97)
 scarcitybanner.BackgroundTransparency = 1
-scarcitybanner.Text = 'The discord link has been fixed, click the discord icon to join.'
+scarcitybanner.Text = 'Original script by 7GrandDad'
 scarcitybanner.TextScaled = true
 scarcitybanner.TextColor3 = Color3.new(1, 1, 1)
 scarcitybanner.TextStrokeTransparency = 0.5
