@@ -1,7 +1,7 @@
 <h2 align="center">
-  i just want to keep this a note: this script is mostly identical to [7GrandDad](https://github.com/7GrandDadPGN)'s script
+  i just want to keep this a note: this script is mostly identical to 7GrandDad (https://github.com/7GrandDadPGN)'s script
   there is almost nothing different except for the logo being changed to APE and certain features being adjusted for better support for potassium
-  the main fix is silent aim crashing, and also fixes for silent aim not aiming at players in games like [SCP: Roleplay](https://www.roblox.com/games/5041144419/SCP-Roleplay)
+  the main fix is silent aim crashing, and also fixes for silent aim not aiming at players in games like SCP: Roleplay
 </h2>
 
 <p align="center">
