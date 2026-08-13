@@ -1,4 +1,5 @@
 local Disabler
+local characterAdded
 
 local function disableConnections(signal)
 	if not getconnections or not signal then return end
@@ -10,6 +11,7 @@ local function disableConnections(signal)
 		end
 	end
 end
+
 Disabler = vape.Categories.Utility:CreateModule({
 	Name = 'Disabler',
 	Function = function(callback)
@@ -22,7 +24,29 @@ Disabler = vape.Categories.Utility:CreateModule({
 	end,
 	Tooltip = 'Disables client-side anticheat event listeners'
 })
-local function characterAdded(char)
+
+local GPCS = Disabler:CreateToggle({
+	Name = 'GetPropertyChangedSignal',
+	Default = true,
+	Tooltip = 'Hooks CFrame, Position, and Velocity change signals'
+})
+
+local Assembly = Disabler:CreateToggle({
+	Name = 'AssemblyVelocity',
+	Tooltip = 'Hooks modern AssemblyLinearVelocity & AngularVelocity signals'
+})
+
+local ChangedSignal = Disabler:CreateToggle({
+	Name = 'Changed Signal',
+	Tooltip = 'Disables generic RootPart.Changed event connections'
+})
+
+local HumanoidState = Disabler:CreateToggle({
+	Name = 'Humanoid State',
+	Tooltip = 'Disables Humanoid StateChanged, FloorMaterial, and MoveDirection signals'
+})
+
+characterAdded = function(char)
 	local root = char:WaitForChild('HumanoidRootPart', 5) or char.PrimaryPart
 	local hum = char:WaitForChild('Humanoid', 5)
 	if root then
@@ -49,24 +73,3 @@ local function characterAdded(char)
 		end
 	end
 end
-
-local GPCS = Disabler:CreateToggle({
-	Name = 'GetPropertyChangedSignal',
-	Default = true,
-	Tooltip = 'Hooks CFrame, Position, and Velocity change signals'
-})
-
-local Assembly = Disabler:CreateToggle({
-	Name = 'AssemblyVelocity',
-	Tooltip = 'Hooks modern AssemblyLinearVelocity & AngularVelocity signals'
-})
-
-local ChangedSignal = Disabler:CreateToggle({
-	Name = 'Changed Signal',
-	Tooltip = 'Disables generic RootPart.Changed event connections'
-})
-
-local HumanoidState = Disabler:CreateToggle({
-	Name = 'Humanoid State',
-	Tooltip = 'Disables Humanoid StateChanged, FloorMaterial, and MoveDirection signals'
-})
