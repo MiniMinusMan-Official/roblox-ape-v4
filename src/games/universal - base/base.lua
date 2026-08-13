@@ -64,6 +64,7 @@ local targetinfo = vape.Libraries.targetinfo
 local getfontsize = vape.Libraries.getfontsize
 local getcustomasset = vape.Libraries.getcustomasset
 
+
 local TargetStrafeVector, SpiderShift, WaypointFolder
 local Spider = {Enabled = false}
 local Phase = {Enabled = false}
@@ -286,7 +287,7 @@ vape.Libraries.auraanims = {
 }
 
 local SpeedMethods
-local SpeedMethodList = {'Velocity'}
+local SpeedMethodList = {'CFrame'}
 SpeedMethods = {
 	Velocity = function(options, moveDirection)
 		local root = entitylib.character.RootPart

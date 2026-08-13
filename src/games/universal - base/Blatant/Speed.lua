@@ -80,8 +80,8 @@ Options = {
 	Value = Speed:CreateSlider({
 		Name = 'Speed',
 		Min = 1,
-		Max = 150,
-		Default = 50,
+		Max = 250,
+		Default = 32,
 		Suffix = function(val)
 			return val == 1 and 'stud' or 'studs'
 		end
