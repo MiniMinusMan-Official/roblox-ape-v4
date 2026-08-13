@@ -47,8 +47,12 @@ local HumanoidState = Disabler:CreateToggle({
 })
 
 characterAdded = function(char)
-	local root = char:WaitForChild('HumanoidRootPart', 5) or char.PrimaryPart
-	local hum = char:WaitForChild('Humanoid', 5)
+	local realChar = typeof(char) == "Instance" and char or (type(char) == "table" and (char.Character or char.character or char.Model))
+	if not realChar or typeof(realChar) ~= "Instance" then return end
+
+	local root = realChar:WaitForChild('HumanoidRootPart', 5) or realChar.PrimaryPart
+	local hum = realChar:WaitForChild('Humanoid', 5)
+
 	if root then
 		if GPCS.Enabled then
 			disableConnections(root:GetPropertyChangedSignal('CFrame'))
@@ -63,6 +67,7 @@ characterAdded = function(char)
 			disableConnections(root.Changed)
 		end
 	end
+
 	if hum then
 		if HumanoidState.Enabled then
 			disableConnections(hum.StateChanged)
