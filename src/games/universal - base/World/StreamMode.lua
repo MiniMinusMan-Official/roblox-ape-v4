@@ -2,7 +2,7 @@ local StreamerMode
 
 StreamerMode = vape.Categories.World:CreateModule({
 	Name = 'StreamerMode',
-	Tooltip = 'Hides your username\nrejoin to undo, this WILL disable itself once it loads',
+	Tooltip = 'Hides your username\nrejoin to undo',
 	Function = function(callback)
 		if callback then
 			plr = game:GetService("Players").LocalPlayer
@@ -39,8 +39,6 @@ StreamerMode = vape.Categories.World:CreateModule({
 				changeText(v)
 			end
 			game.DescendantAdded:Connect(changeText)
-
-			StreamerMode.Enabled = false
 		else end
 	end
 })
