@@ -1,55 +1,43 @@
 local SpinBot
-local Mode
 local XToggle
 local YToggle
 local ZToggle
 local Value
-local AngularVelocity
+local SpinAngle = 0
+local OldAutoRotate
 
 SpinBot = vape.Categories.Blatant:CreateModule({
 	Name = 'SpinBot',
 	Function = function(callback)
 		if callback then
-			SpinBot:Clean(runService.PreSimulation:Connect(function()
+			SpinAngle = 0
+
+			if entitylib.isAlive then
+				OldAutoRotate = entitylib.character.Humanoid.AutoRotate
+				entitylib.character.Humanoid.AutoRotate = false
+			end
+
+			SpinBot:Clean(runService.PreSimulation:Connect(function(delta)
 				if entitylib.isAlive then
-					if Mode.Value == 'RotVelocity' then
-						local originalRotVelocity = entitylib.character.RootPart.RotVelocity
-						entitylib.character.Humanoid.AutoRotate = false
-						entitylib.character.RootPart.RotVelocity = Vector3.new(XToggle.Enabled and Value.Value or originalRotVelocity.X, YToggle.Enabled and Value.Value or originalRotVelocity.Y, ZToggle.Enabled and Value.Value or originalRotVelocity.Z)
-					elseif Mode.Value == 'CFrame' then
-						local val = math.rad((tick() * (20 * Value.Value)) % 360)
-						local x, y, z = entitylib.character.RootPart.CFrame:ToOrientation()
-						entitylib.character.RootPart.CFrame = CFrame.new(entitylib.character.RootPart.Position) * CFrame.Angles(XToggle.Enabled and val or x, YToggle.Enabled and val or y, ZToggle.Enabled and val or z)
-					elseif AngularVelocity then
-						AngularVelocity.Parent = entitylib.isAlive and entitylib.character.RootPart
-						AngularVelocity.MaxTorque = Vector3.new(XToggle.Enabled and math.huge or 0, YToggle.Enabled and math.huge or 0, ZToggle.Enabled and math.huge or 0)
-						AngularVelocity.AngularVelocity = Vector3.new(Value.Value, Value.Value, Value.Value)
-					end
+					local humanoid = entitylib.character.Humanoid
+					local root = entitylib.character.RootPart
+
+					humanoid.AutoRotate = false
+
+					SpinAngle = (SpinAngle + math.rad(20 * Value.Value) * delta) % (math.pi * 2)
+
+					local x, y, z = root.CFrame:ToOrientation()
+
+					root.CFrame = CFrame.new(root.Position) * CFrame.Angles(XToggle.Enabled and SpinAngle or x, YToggle.Enabled and SpinAngle or y, ZToggle.Enabled and SpinAngle or z)
 				end
 			end))
 		else
-			if entitylib.isAlive and Mode.Value == 'RotVelocity' then
-				entitylib.character.Humanoid.AutoRotate = true
-			end
-
-			if AngularVelocity then
-				AngularVelocity.Parent = nil
+			if entitylib.isAlive then
+				entitylib.character.Humanoid.AutoRotate = OldAutoRotate == nil and true or OldAutoRotate
 			end
 		end
 	end,
-	Tooltip = 'Makes your character spin around in circles (does not work in first person)'
-})
-Mode = SpinBot:CreateDropdown({
-	Name = 'Mode',
-	List = {'CFrame', 'RotVelocity', 'BodyMover'},
-	Function = function(val)
-		if AngularVelocity then
-			AngularVelocity:Destroy()
-			AngularVelocity = nil
-		end
-		AngularVelocity = val == 'BodyMover' and Instance.new('BodyAngularVelocity') or nil
-	end,
-	Tooltip = 'CFrame - Directly adjusts your characters angle\nRotVelocity - Sets the rotation velocity so that you spin\nBodyMover - Uses body movers to edit your rotation velocity'
+	Tooltip = 'Makes your character continuously spin'
 })
 Value = SpinBot:CreateSlider({
 	Name = 'Speed',
