@@ -6,7 +6,7 @@ local name = "robolx"
 local loopThread
 local con
 
-StreamerMode = vape.Categories.Blatant:CreateModule({
+StreamerMode = vape.Categories.World:CreateModule({
 	Name = 'StreamerMode',
 	Tooltip = 'Hides your username and (optionally) your avatar too',
 	Function = function(callback)
