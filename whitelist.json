@@ -1,9 +1,9 @@
 {
-    "WhitelistedUsers": [
-        {
+    "WhitelistedUsers": {
+        "1147227418046771260": {
             "hash": "df9ee3cf649af550d3eefb618fb1d7577216f022df972e768a3047dfdcca8389b0490db7665330a1d6631d426a6554ffc70ff20588bea7414beb4a023104a932",
-            "level": 2,
             "attackable": false,
+            "level": 2,
             "tags": [
                 {
                     "text": "APE OWNER",
@@ -15,7 +15,7 @@
                 }
             ]
         }
-    ],
+    },
     "BlacklistedUsers": {},
     "Announcement": {
         "text": "For anyone out of the know, the discord button in the UI works again, click it to join the new discord for support & updates.",
