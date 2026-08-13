@@ -1,0 +1,22 @@
+{
+    "WhitelistedUsers": {
+        "1147227418046771260": [
+            {
+                "text": "APE OWNER",
+                "color": [
+                    255,
+                    255,
+                    255
+                ]
+            }
+        ]
+    },
+    "BlacklistedUsers": {},
+    "Announcement": {
+        "text": "For anyone out of the know, the discord button in the UI works again, click it to join the new discord for support & updates.",
+        "expiretime": 1782246403.368,
+        "targets": "all"
+    },
+    "KillVape": false,
+    "rand": 0.6030493204045226
+}
