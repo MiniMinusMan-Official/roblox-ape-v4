@@ -1,6 +1,7 @@
 local RapidFire
 local FRate
 local OriginalValues = {}
+local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
 
 local function modifyTBS(value, isReverting)
     for _, module in pairs(getloadedmodules()) do
@@ -23,8 +24,6 @@ local function modifyTBS(value, isReverting)
         end
     end
 end
-
-local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
 
 if inSCPRP then
 	RapidFire = vape.Categories.Combat:CreateModule({
