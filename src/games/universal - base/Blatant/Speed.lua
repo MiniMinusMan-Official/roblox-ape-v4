@@ -75,7 +75,7 @@ Mode = Speed:CreateDropdown({
 			Speed:Toggle()
 		end
 	end,
-	Tooltip = 'Velocity - Uses smooth physics based movement\nImpulse - Same as velocity while using forces instead\nCFrame - Directly adjusts the position of the root\nTP - Large teleports within intervals\nPulse - Uses Velocity but with bursts of speed'
+	Tooltip = methodTooltip
 })
 Options = {
 	MoveMethod = Speed:CreateDropdown({
