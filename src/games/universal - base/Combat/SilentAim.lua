@@ -1,5 +1,5 @@
 local mouseClicked
-local inSCPRP = game.PlaceId == 5041144419 and game.PlaceId == 10953555034
+local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
 
 local methodList = inSCPRP 
 	and {'Raycast', 'Ray'} 
