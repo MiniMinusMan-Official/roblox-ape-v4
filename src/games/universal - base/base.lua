@@ -293,13 +293,6 @@ SpeedMethods = {
 		local root = entitylib.character.RootPart
 		root.AssemblyLinearVelocity = (moveDirection * options.Value.Value) + Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
 	end,
-	Impulse = function(options, moveDirection)
-		local root = entitylib.character.RootPart
-		local diff = ((moveDirection * options.Value.Value) - root.AssemblyLinearVelocity) * Vector3.new(1, 0, 1)
-		if diff.Magnitude > (moveDirection == Vector3.zero and 10 or 2) then
-			root:ApplyImpulse(diff * root.AssemblyMass)
-		end
-	end,
 	CFrame = function(options, moveDirection, dt)
 		local root = entitylib.character.RootPart
 		local dest = (moveDirection * math.max(options.Value.Value - entitylib.character.Humanoid.WalkSpeed, 0) * dt)
@@ -312,20 +305,31 @@ SpeedMethods = {
 			end
 		end
 		root.CFrame += dest
-	end,
-	TP = function(options, moveDirection)
-		if options.TPTiming < tick() then
-			options.TPTiming = tick() + options.TPFrequency.Value
-			SpeedMethods.CFrame(options, moveDirection, 1)
+	end
+}
+
+if game.PlaceId ~= 5041144419 then
+	SpeedMethods.Impulse = function(options, moveDirection)
+		local root = entitylib.character.RootPart
+		local diff = ((moveDirection * options.Value.Value) - root.AssemblyLinearVelocity) * Vector3.new(1, 0, 1)
+		if diff.Magnitude > (moveDirection == Vector3.zero and 10 or 2) then
+			root:ApplyImpulse(diff * root.AssemblyMass)
 		end
-	end,
-	Pulse = function(options, moveDirection)
+	end
+	SpeedMethods.Pulse = function(options, moveDirection)
 		local root = entitylib.character.RootPart
 		local dt = math.max(options.Value.Value - entitylib.character.Humanoid.WalkSpeed, 0)
 		dt = dt * (1 - math.min((tick() % (options.PulseLength.Value + options.PulseDelay.Value)) / options.PulseLength.Value, 1))
 		root.AssemblyLinearVelocity = (moveDirection * (entitylib.character.Humanoid.WalkSpeed + dt)) + Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
 	end
-}
+	SpeedMethods.TP = function(options, moveDirection)
+		if options.TPTiming < tick() then
+			options.TPTiming = tick() + options.TPFrequency.Value
+			SpeedMethods.CFrame(options, moveDirection, 1)
+		end
+	end
+end
+
 for name in SpeedMethods do
 	if not table.find(SpeedMethodList, name) then
 		table.insert(SpeedMethodList, name)
