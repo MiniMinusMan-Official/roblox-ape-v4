@@ -335,55 +335,33 @@ if game.PlaceId ~= 5041144419 and game.PlaceId ~= 10953555034 then
 end
 
 if game.PlaceId == 77790193039862 or game.PlaceId == 80041634734121 then
-    notif('Ape', 'so ur playing 1.8 arena?\nbet, i changed some settings to work for it better!', 10)
-    SpeedMethods = {}
-    SpeedMethodList = {'Main'}
-    
-    -- helper to use WASD
-    local UserInputService = game:GetService("UserInputService")
-    local function getKeyboardMoveDirection()
-        local moveVec = Vector3.zero
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVec += Vector3.new(0, 0, -1) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVec += Vector3.new(0, 0, 1) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVec += Vector3.new(-1, 0, 0) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVec += Vector3.new(1, 0, 0) end
-        
-        if moveVec.Magnitude > 0 then
-            moveVec = moveVec.Unit
-            local cameraCFrame = workspace.CurrentCamera.CFrame
-            local look = cameraCFrame.LookVector * Vector3.new(1, 0, 1)
-            local right = cameraCFrame.RightVector * Vector3.new(1, 0, 1)
-            return (look * -moveVec.Z + right * moveVec.X).Unit
-        end
-        return Vector3.zero
-    end
-
-    SpeedMethods.Main = function(options, moveDirection, dt)
-        local character = workspace:FindFirstChild("LocalCharacter_" .. lplr.Name)
-        if not character then return end
-
-        local root = character:FindFirstChild("Head")
-        if not root then return end
-        local dir = (moveDirection and moveDirection.Magnitude > 0) and moveDirection or getKeyboardMoveDirection()
-        if dir.Magnitude == 0 then return end
-        local renderDt = (type(dt) == "number" and dt > 0) and dt or (1 / 60)
-        local speedValue = options and options.Value and options.Value.Value or 30
-        local speedBoost = math.max(speedValue - 12, 0)
-
-        local dest = (dir * speedBoost * renderDt)
-
-        if options and options.WallCheck and options.WallCheck.Enabled then
-            options.rayCheck.FilterDescendantsInstances = {character, workspace.CurrentCamera}
-            options.rayCheck.CollisionGroup = root.CollisionGroup
-            
-            local ray = workspace:Raycast(root.Position, dest, options.rayCheck)
-            if ray then
-                dest = ((ray.Position + ray.Normal) - root.Position)
-            end
-        end
-
-        root.CFrame = root.CFrame + dest
-    end
+	notif('Ape', 'so ur playing 1.8 arena?\nbet, i changed some settings to work for it better!', 10)
+	SpeedMethods = {}
+	SpeedMethodList = {'Main'}
+	
+	local UserInputService = game:GetService("UserInputService")
+	
+	SpeedMethods.Main = function(options, moveDirection, dt)
+		local character = workspace:FindFirstChild("LocalCharacter_" .. lplr.Name)
+		if not character then return end
+		
+		local root = character:FindFirstChild("Head")
+		if not root then return end
+		local moveVector = Vector3.zero
+		if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVector += Vector3.new(0, 0, -1) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVector += Vector3.new(0, 0, 1) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVector += Vector3.new(-1, 0, 0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVector += Vector3.new(1, 0, 0) end
+		if moveVector.Magnitude == 0 then return end
+		local camera = workspace.CurrentCamera
+		local look = camera.CFrame.LookVector * Vector3.new(1, 0, 1)
+		local right = camera.CFrame.RightVector * Vector3.new(1, 0, 1)
+		local realDirection = (look * -moveVector.Z + right * moveVector.X).Unit
+		local speedVal = (options and options.Value and options.Value.Value) or 20
+		local speedBoost = math.max(speedVal - 12, 0)
+		local delta = (dt and dt > 0) and dt or (1 / 60)
+		root.CFrame = root.CFrame + (realDirection * speedBoost * delta)
+	end
 end
 
 for name in SpeedMethods do
