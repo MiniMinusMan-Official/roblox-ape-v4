@@ -1,11 +1,11 @@
 local mouseClicked
-local isOtherPlace = game.PlaceId ~= 5041144419 and game.PlaceId ~= 10953555034
+local inSCPRP = game.PlaceId == 5041144419 and game.PlaceId == 10953555034
 
-local methodList = isOtherPlace 
+local methodList = inSCPRP 
 	and {'Raycast', 'Ray'} 
 	or {'FindPartOnRay', 'FindPartOnRayWithIgnoreList', 'FindPartOnRayWithWhitelist', 'ScreenPointToRay', 'ViewportPointToRay', 'Raycast', 'Ray'}
 
-local methodTooltip = isOtherPlace 
+local methodTooltip = inSCPRP 
 	and 'Raycast - Best for shooting through walls\nRay - Hooking Ray.new, may or may not work'
 	or 'FindPartOnRay* - Deprecated methods of raycasting used in old games\nRaycast - The modern raycast method\nPointToRay - Method to generate a ray from screen coords\nRay - Hooking Ray.new'
 
