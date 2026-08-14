@@ -7,6 +7,12 @@ local AutoJumpValue
 local CustomProperties
 local w, s, a, d = 0, 0, 0, 0
 
+local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
+
+local methodTooltip = inSCPRP 
+	and 'Velocity - Uses smooth physics based movement\nImpulse - Same as velocity while using forces instead\nCFrame - Directly adjusts the position of the root\nTP - Large teleports within intervals\nPulse - Uses Velocity but with bursts of speed'
+	or 'Velocity - Uses smooth physics based movement\nCFrame - Directly adjusts the position of the root'
+
 Speed = vape.Categories.Blatant:CreateModule({
 	Name = 'Speed',
 	Function = function(callback)
