@@ -1,4 +1,14 @@
 local mouseClicked
+local isOtherPlace = game.PlaceId ~= 5041144419 and game.PlaceId ~= 10953555034
+
+local methodList = isOtherPlace 
+	and {'Raycast', 'Ray'} 
+	or {'FindPartOnRay', 'FindPartOnRayWithIgnoreList', 'FindPartOnRayWithWhitelist', 'ScreenPointToRay', 'ViewportPointToRay', 'Raycast', 'Ray'}
+
+local methodTooltip = isOtherPlace 
+	and 'Raycast - Best for shooting through walls\nRay - Hooking Ray.new, may or may not work'
+	or 'FindPartOnRay* - Deprecated methods of raycasting used in old games\nRaycast - The modern raycast method\nPointToRay - Method to generate a ray from screen coords\nRay - Hooking Ray.new'
+
 run(function()
 	local SilentAim
 	local Target
@@ -229,24 +239,17 @@ run(function()
 
 	Method = SilentAim:CreateDropdown({
 		Name = 'Method',
-
-		List = if game.PlaceId == 5041144419 or game.PlaceId == 10953555034 then 
-			{'Raycast', 'Ray'} 
-		else 
-			{'FindPartOnRay', 'FindPartOnRayWithIgnoreList', 'FindPartOnRayWithWhitelist', 'ScreenPointToRay', 'ViewportPointToRay', 'Raycast', 'Ray'},
-
+		List = methodList,
 		Function = function(val)
 			if SilentAim.Enabled then
 				SilentAim:Toggle()
 				SilentAim:Toggle()
 			end
-			MethodRay.Object.Visible = val == 'Raycast'
+			if MethodRay and MethodRay.Object then
+				MethodRay.Object.Visible = val == 'Raycast'
+			end
 		end,
-
-		Tooltip = game.PlaceId == 5041144419 or game.PlaceId == 10953555034 then
-			'Raycast - Best for shooting through walls\nRay - Hooking Ray.new, may or may not work'
-		else
-			'FindPartOnRay* - Deprecated methods of raycasting used in old games\nRaycast - The modern raycast method\nPointToRay - Method to generate a ray from screen coords\nRay - Hooking Ray.new',
+		Tooltip = methodTooltip,
 	})
 
 	MethodRay = SilentAim:CreateDropdown({
