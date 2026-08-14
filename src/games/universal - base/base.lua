@@ -335,24 +335,29 @@ if game.PlaceId ~= 5041144419 and game.PlaceId ~= 10953555034 then
 end
 
 if game.PlaceId == 77790193039862 or game.PlaceId == 80041634734121 then
-	notif('Ape', 'so ur playing 1.8 arena?\nbet, i changed some settings to work for it better!', 10)
-	SpeedMethods = {}
-	SpeedMethodList = {'Main'}
-	
-	SpeedMethods.Main = function(options, moveDirection, dt)
-		local character = workspace:FindFirstChild("LocalCharacter_" .. lplr.Name)
-		local root = character and character:FindFirstChild("Head")
-		local dest = (moveDirection * math.max(options.Value.Value - entitylib.character.Humanoid.WalkSpeed, 0) * dt)
-		if options.WallCheck.Enabled then
-			options.rayCheck.FilterDescendantsInstances = {lplr.Character, gameCamera}
-			options.rayCheck.CollisionGroup = root.CollisionGroup
-			local ray = workspace:Raycast(root.Position, dest, options.rayCheck)
-			if ray then
-				dest = ((ray.Position + ray.Normal) - root.Position)
-			end
-		end
-		root.CFrame += dest
-	end
+    notif('Ape', 'so ur playing 1.8 arena?\nbet, i changed some settings to work for it better!', 10)
+    SpeedMethods = {}
+    SpeedMethodList = {'Main'}
+    
+    SpeedMethods.Main = function(options, moveDirection, dt)
+        local character = workspace:FindFirstChild("LocalCharacter_" .. lplr.Name)
+        if not character then return end
+        local root = character:FindFirstChild("Head")
+        if not root then return end
+        local speedDifference = math.max(options.Value.Value - entitylib.character.Humanoid.WalkSpeed, 0)
+        local dest = (moveDirection * speedDifference * dt)
+        if dest.Magnitude == 0 then return end
+        if options.WallCheck.Enabled then
+            options.rayCheck.FilterDescendantsInstances = {character, gameCamera}
+            options.rayCheck.CollisionGroup = root.CollisionGroup
+            
+            local ray = workspace:Raycast(root.Position, dest, options.rayCheck)
+            if ray then
+                dest = ((ray.Position + ray.Normal) - root.Position)
+            end
+        end
+        character:PivotTo(character:GetPivot() + dest)
+    end
 end
 
 for name in SpeedMethods do
