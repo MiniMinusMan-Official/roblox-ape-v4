@@ -2,6 +2,7 @@ local Invisible
 local oldcf
 local animtrack
 local proper = true
+local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
 
 local function animationTrickery()
 	if entitylib.isAlive then
@@ -19,55 +20,57 @@ local function animationTrickery()
 	end
 end
 
-Invisible = vape.Categories.Blatant:CreateModule({
-	Name = 'Invisible',
-	Function = function(callback)
-		if callback then
-			animationTrickery()
+if not inSCPRP then
+	Invisible = vape.Categories.Blatant:CreateModule({
+		Name = 'Invisible',
+		Function = function(callback)
+			if callback then
+				animationTrickery()
 
-			oldcf = nil
-			local bindKey = httpService:GenerateGUID(true)
-			runService:BindToRenderStep(bindKey, 0, function()
+				oldcf = nil
+				local bindKey = httpService:GenerateGUID(true)
+				runService:BindToRenderStep(bindKey, 0, function()
+					if entitylib.isAlive and oldcf then
+						entitylib.character.RootPart.CFrame = oldcf
+						animtrack:AdjustWeight(0.001)
+					end
+				end)
+
+				Invisible:Clean(function()
+					runService:UnbindFromRenderStep(bindKey)
+				end)
+
+				Invisible:Clean(runService.Heartbeat:Connect(function(dt)
+					if entitylib.isAlive then
+						local isR15 = entitylib.character.Humanoid.RigType == Enum.HumanoidRigType.R15
+						local root = entitylib.character.RootPart
+						local cf = root.CFrame - Vector3.new(0, entitylib.character.Humanoid.HipHeight + (root.Size.Y / 2) - 1, 0)
+						oldcf = root.CFrame
+
+						root.CFrame = cf * CFrame.Angles(math.rad(isR15 and 180 or 90), 0, 0)
+						animtrack:AdjustWeight(100)
+					end
+				end))
+
+				Invisible:Clean(entitylib.Events.LocalAdded:Connect(function(char)
+					local animator = char.Humanoid:WaitForChild('Animator', 1)
+					if animator and Invisible.Enabled then
+						oldroot = nil
+						Invisible:Toggle()
+						Invisible:Toggle()
+					end
+				end))
+			else
+				if animtrack then
+					animtrack:Stop()
+					animtrack:Destroy()
+				end
+
 				if entitylib.isAlive and oldcf then
 					entitylib.character.RootPart.CFrame = oldcf
-					animtrack:AdjustWeight(0.001)
 				end
-			end)
-
-			Invisible:Clean(function()
-				runService:UnbindFromRenderStep(bindKey)
-			end)
-
-			Invisible:Clean(runService.Heartbeat:Connect(function(dt)
-				if entitylib.isAlive then
-					local isR15 = entitylib.character.Humanoid.RigType == Enum.HumanoidRigType.R15
-					local root = entitylib.character.RootPart
-					local cf = root.CFrame - Vector3.new(0, entitylib.character.Humanoid.HipHeight + (root.Size.Y / 2) - 1, 0)
-					oldcf = root.CFrame
-
-					root.CFrame = cf * CFrame.Angles(math.rad(isR15 and 180 or 90), 0, 0)
-					animtrack:AdjustWeight(100)
-				end
-			end))
-
-			Invisible:Clean(entitylib.Events.LocalAdded:Connect(function(char)
-				local animator = char.Humanoid:WaitForChild('Animator', 1)
-				if animator and Invisible.Enabled then
-					oldroot = nil
-					Invisible:Toggle()
-					Invisible:Toggle()
-				end
-			end))
-		else
-			if animtrack then
-				animtrack:Stop()
-				animtrack:Destroy()
 			end
-
-			if entitylib.isAlive and oldcf then
-				entitylib.character.RootPart.CFrame = oldcf
-			end
-		end
-	end,
-	Tooltip = 'Turns you invisible.'
-})
+		end,
+		Tooltip = 'Turns you invisible.'
+	})
+end

@@ -7,6 +7,17 @@ overlapCheck.MaxParts = 9e9
 local modified, fflag = {}
 local teleported
 
+local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
+
+local methodList = inSCPRP 
+	and {'Part', 'FFlag'}
+	or {'Part', 'Character', 'CFrame', 'Motor', 'FFlag'}
+
+local methodTooltip = inSCPRP 
+	and 'Part - Modifies parts collision status around you\nFFlag - Directly adjusts all physics collisions'
+	or 'Part - Modifies parts collision status around you\nCharacter - Modifies the local collision status of the character\nCFrame - Teleports you past parts\nMotor - Same as CFrame with a bypass\nFFlag - Directly adjusts all physics collisions'
+
+
 local function grabClosestNormal(ray)
 	local partCF, mag, closest = ray.Instance.CFrame, 0, Enum.NormalId.Top
 
@@ -115,7 +126,7 @@ Phase = vape.Categories.Blatant:CreateModule({
 })
 Mode = Phase:CreateDropdown({
 	Name = 'Mode',
-	List = {'Part', 'Character', 'CFrame', 'Motor', 'FFlag'},
+	List = methodList,
 	Function = function(val)
 		StudLimit.Object.Visible = val == 'CFrame' or val == 'Motor'
 		if fflag then
@@ -127,7 +138,7 @@ Mode = Phase:CreateDropdown({
 		table.clear(modified)
 		fflag = nil
 	end,
-	Tooltip = 'Part - Modifies parts collision status around you\nCharacter - Modifies the local collision status of the character\nCFrame - Teleports you past parts\nMotor - Same as CFrame with a bypass\nFFlag - Directly adjusts all physics collisions'
+	Tooltip = methodTooltip
 })
 StudLimit = Phase:CreateSlider({
 	Name = 'Wall Size',
