@@ -13,6 +13,11 @@ local methodTooltip = inSCPRP
 	and 'Velocity - Uses smooth physics based movement\nCFrame - Directly adjusts the position of the root'
 	or 'Velocity - Uses smooth physics based movement\nImpulse - Same as velocity while using forces instead\nCFrame - Directly adjusts the position of the root\nTP - Large teleports within intervals\nPulse - Uses Velocity but with bursts of speed'
 
+local in18arena = game.PlaceId == 77790193039862 or game.PlaceId == 80041634734121
+
+methodTooltip = in18arena 
+	and 'Speed for 1.8 arena'
+	or methodTooltip
 
 Speed = vape.Categories.Blatant:CreateModule({
 	Name = 'Speed',

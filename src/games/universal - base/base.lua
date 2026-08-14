@@ -309,7 +309,7 @@ SpeedMethods = {
 }
 
 if game.PlaceId == 5041144419 or game.PlaceId == 10953555034 then
-	notif('Ape', 'so ur playing scp roleplay?\nbet, i changed some settings to work for scp better!', 10)
+	notif('Ape', 'so ur playing scp roleplay?\nbet, i changed some settings to work for it better!', 10)
 end
 
 if game.PlaceId ~= 5041144419 and game.PlaceId ~= 10953555034 then
@@ -331,6 +331,31 @@ if game.PlaceId ~= 5041144419 and game.PlaceId ~= 10953555034 then
 			options.TPTiming = tick() + options.TPFrequency.Value
 			SpeedMethods.CFrame(options, moveDirection, 1)
 		end
+	end
+end
+
+if game.PlaceId == 77790193039862 or game.PlaceId == 80041634734121 then
+	notif('Ape', 'so ur playing 1.8 arena?\nbet, i changed some settings to work for it better!', 10)
+	SpeedMethods = {}
+	
+	SpeedMethods.one_point_eightArena = function(options, moveDirection, dt)
+		local character = workspace:FindFirstChild("LocalCharacter_" .. lplr.Name)
+		local head = character and character:FindFirstChild("Head")
+		
+		if not head then return end
+
+		local dest = (moveDirection * math.max(options.Value.Value - entitylib.character.Humanoid.WalkSpeed, 0) * (dt or 1))
+		
+		if options.WallCheck.Enabled then
+			options.rayCheck.FilterDescendantsInstances = {lplr.Character, gameCamera}
+			options.rayCheck.CollisionGroup = head.CollisionGroup
+			local ray = workspace:Raycast(head.Position, dest, options.rayCheck)
+			if ray then
+				dest = ((ray.Position + ray.Normal) - head.Position)
+			end
+		end
+
+		head.CFrame += dest
 	end
 end
 
