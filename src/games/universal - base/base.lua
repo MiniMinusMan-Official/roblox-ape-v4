@@ -340,26 +340,49 @@ if game.PlaceId == 77790193039862 or game.PlaceId == 80041634734121 then
 	SpeedMethodList = {'Main'}
 	
 	local UserInputService = game:GetService("UserInputService")
-	
+	local Players = game:GetService("Players")
+	local function getCustomCharacter()
+		local localPlayer = Players.LocalPlayer
+		if not localPlayer then return nil end
+		local char = workspace:FindFirstChild("LocalCharacter_" .. localPlayer.Name)
+		if char then return char end
+		char = workspace:FindFirstChild("LocalCharacter_" .. tostring(localPlayer.UserId))
+		if char then return char end
+		for _, child in ipairs(workspace:GetChildren()) do
+			if child.Name:sub(1, 15) == "LocalCharacter_" then
+				return child
+			end
+		end
+
+		return nil
+	end
+
 	SpeedMethods.Main = function(options, moveDirection, dt)
-		local character = workspace:FindFirstChild("LocalCharacter_" .. lplr.Name)
-		if not character then return end
+		local character = getCustomCharacter()
+		if not character then 
+			warn("[Speed Debug] Could not find LocalCharacter in workspace!")
+			return 
+		end
 		
 		local root = character:FindFirstChild("Head")
-		if not root then return end
+		if not root then 
+			warn("[Speed Debug] Found character, but Head is missing!")
+			return 
+		end
 		local moveVector = Vector3.zero
 		if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveVector += Vector3.new(0, 0, -1) end
 		if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveVector += Vector3.new(0, 0, 1) end
 		if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveVector += Vector3.new(-1, 0, 0) end
 		if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveVector += Vector3.new(1, 0, 0) end
+
 		if moveVector.Magnitude == 0 then return end
 		local camera = workspace.CurrentCamera
 		local look = camera.CFrame.LookVector * Vector3.new(1, 0, 1)
 		local right = camera.CFrame.RightVector * Vector3.new(1, 0, 1)
 		local realDirection = (look * -moveVector.Z + right * moveVector.X).Unit
-		local speedVal = (options and options.Value and options.Value.Value) or 20
+		local speedVal = (options and options.Value and options.Value.Value) or 25
 		local speedBoost = math.max(speedVal - 12, 0)
-		local delta = (dt and dt > 0) and dt or (1 / 60)
+		local delta = (type(dt) == "number" and dt > 0) and dt or (1 / 60)
 		root.CFrame = root.CFrame + (realDirection * speedBoost * delta)
 	end
 end
