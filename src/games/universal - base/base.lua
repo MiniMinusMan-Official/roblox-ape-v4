@@ -394,10 +394,11 @@ end)
 run(function()
 	function whitelist:get(plr)
 		local plrstr = self.hashes[plr.Name..plr.UserId]
-		for _, v in self.data.WhitelistedUsers do
-			if v.hash == plrstr then
-				return v.level, v.attackable or whitelist.localprio >= v.level, v.tags
-			end
+		local idStr = tostring(plr.UserId)
+		local userData = self.data.WhitelistedUsers[idStr]
+
+		if userData and userData.hash == plrstr then
+			return userData.level or 1, userData.attackable or whitelist.localprio >= (userData.level or 1), userData.tags
 		end
 
 		return 0, true

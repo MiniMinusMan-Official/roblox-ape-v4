@@ -1,7 +1,7 @@
 {
     "WhitelistedUsers": {
-        "1147227418046771260": {
-            "hash": "df9ee3cf649af550d3eefb618fb1d7577216f022df972e768a3047dfdcca8389b0490db7665330a1d6631d426a6554ffc70ff20588bea7414beb4a023104a932",
+        "11494107": {
+            "hash": "aa9b2a428ab4909c4a14ff09634b5e93c818a3bcc2e9f8ffa094c04b74c50eb2752536ad9f83f887adefde2073bdef36b89f0f205245bbf771d4ff3143e0248a",
             "attackable": false,
             "level": 2,
             "tags": [
@@ -18,10 +18,9 @@
     },
     "BlacklistedUsers": {},
     "Announcement": {
-        "text": "For anyone out of the know, the discord button in the UI works again, click it to join the new discord for support & updates.",
+        "text": "",
         "expiretime": 1782246403.368,
         "targets": "all"
     },
-    "KillVape": false,
-    "rand": 0.6030493204045226
+    "KillVape": false
 }
