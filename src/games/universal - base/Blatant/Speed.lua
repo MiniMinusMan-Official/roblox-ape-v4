@@ -28,6 +28,12 @@ Speed = vape.Categories.Blatant:CreateModule({
 			Speed:Clean(runService.PreSimulation:Connect(function(dt)
 				local fly = vape.Modules.Fly
 				local longJump = vape.Modules.LongJump
+				if in18arena then
+					if SpeedMethods[Mode.Value] then
+						SpeedMethods[Mode.Value](Options, Vector3.zero, dt)
+					end
+					return
+				end
 				if entitylib.isAlive and not (fly and fly.Enabled) and not (longJump and longJump.Enabled) then
 					local state = entitylib.character.Humanoid:GetState()
 					if state == Enum.HumanoidStateType.Climbing then return end
