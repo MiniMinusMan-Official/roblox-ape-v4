@@ -337,25 +337,21 @@ end
 if game.PlaceId == 77790193039862 or game.PlaceId == 80041634734121 then
 	notif('Ape', 'so ur playing 1.8 arena?\nbet, i changed some settings to work for it better!', 10)
 	SpeedMethods = {}
+	SpeedMethodList = {'Main'}
 	
-	SpeedMethods.one_point_eightArena = function(options, moveDirection, dt)
+	SpeedMethods.Main = function(options, moveDirection, dt)
 		local character = workspace:FindFirstChild("LocalCharacter_" .. lplr.Name)
-		local head = character and character:FindFirstChild("Head")
-		
-		if not head then return end
-
-		local dest = (moveDirection * math.max(options.Value.Value - entitylib.character.Humanoid.WalkSpeed, 0) * (dt or 1))
-		
+		local root = character and character:FindFirstChild("Head")
+		local dest = (moveDirection * math.max(options.Value.Value - entitylib.character.Humanoid.WalkSpeed, 0) * dt)
 		if options.WallCheck.Enabled then
 			options.rayCheck.FilterDescendantsInstances = {lplr.Character, gameCamera}
-			options.rayCheck.CollisionGroup = head.CollisionGroup
-			local ray = workspace:Raycast(head.Position, dest, options.rayCheck)
+			options.rayCheck.CollisionGroup = root.CollisionGroup
+			local ray = workspace:Raycast(root.Position, dest, options.rayCheck)
 			if ray then
-				dest = ((ray.Position + ray.Normal) - head.Position)
+				dest = ((ray.Position + ray.Normal) - root.Position)
 			end
 		end
-
-		head.CFrame += dest
+		root.CFrame += dest
 	end
 end
 
