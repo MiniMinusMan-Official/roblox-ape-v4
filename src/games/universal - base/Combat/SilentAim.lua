@@ -32,7 +32,6 @@ run(function()
 	local function getTarget(origin, obj)
 		if rand.NextNumber(rand, 0, 100) > (AutoFire.Enabled and 100 or HitChance.Value) then return end
 
-		-- Always select the player by RootPart, matching AimAssist.
 		local ent = entitylib['Entity'..Mode.Value]({
 			Range = Range.Value,
 			Wallcheck = Target.Walls.Enabled and (obj or true) or nil,
@@ -44,7 +43,6 @@ run(function()
 
 		if not ent then return end
 
-		-- Choose the actual hit part after finding a valid player.
 		local headshot = rand.NextNumber(rand, 0, 100) < (AutoFire.Enabled and 100 or HeadshotChance.Value)
 		local targetPart = headshot and ent.Head or ent.RootPart
 		targetPart = targetPart or ent.RootPart or ent.Head
@@ -204,8 +202,6 @@ run(function()
 					mouseClicked = false
 				end
 			else
-				-- Leave installed hooks in place during teardown. They pass
-				-- through safely while SilentAim is disabled.
 				if mouseClicked then
 					pcall(mouse1release)
 					mouseClicked = false
@@ -233,7 +229,12 @@ run(function()
 
 	Method = SilentAim:CreateDropdown({
 		Name = 'Method',
-		List = {'FindPartOnRay', 'FindPartOnRayWithIgnoreList', 'FindPartOnRayWithWhitelist', 'ScreenPointToRay', 'ViewportPointToRay', 'Raycast', 'Ray'},
+
+		List = if game.PlaceId == 5041144419 or game.PlaceId == 10953555034 then 
+			{'Raycast', 'Ray'} 
+		else 
+			{'FindPartOnRay', 'FindPartOnRayWithIgnoreList', 'FindPartOnRayWithWhitelist', 'ScreenPointToRay', 'ViewportPointToRay', 'Raycast', 'Ray'},
+
 		Function = function(val)
 			if SilentAim.Enabled then
 				SilentAim:Toggle()
@@ -241,7 +242,11 @@ run(function()
 			end
 			MethodRay.Object.Visible = val == 'Raycast'
 		end,
-		Tooltip = 'FindPartOnRay* - Deprecated methods of raycasting used in old games\nRaycast - The modern raycast method\nPointToRay - Method to generate a ray from screen coords\nRay - Hooking Ray.new'
+
+		Tooltip = game.PlaceId == 5041144419 or game.PlaceId == 10953555034 then
+			'Raycast - Best for shooting through walls\nRay - Hooking Ray.new, may or may not work'
+		else
+			'FindPartOnRay* - Deprecated methods of raycasting used in old games\nRaycast - The modern raycast method\nPointToRay - Method to generate a ray from screen coords\nRay - Hooking Ray.new',
 	})
 
 	MethodRay = SilentAim:CreateDropdown({

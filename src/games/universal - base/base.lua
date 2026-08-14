@@ -308,7 +308,11 @@ SpeedMethods = {
 	end
 }
 
-if game.PlaceId ~= 5041144419 then
+if game.PlaceId == 5041144419 or game.PlaceId == 10953555034 then
+	notif('Ape', 'so ur playing scp roleplay?\nbet, i changed some settings to work for scp better!', 10)
+end
+
+if game.PlaceId ~= 5041144419 and game.PlaceId ~= 10953555034 then
 	SpeedMethods.Impulse = function(options, moveDirection)
 		local root = entitylib.character.RootPart
 		local diff = ((moveDirection * options.Value.Value) - root.AssemblyLinearVelocity) * Vector3.new(1, 0, 1)
