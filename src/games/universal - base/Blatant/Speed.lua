@@ -98,7 +98,7 @@ Options = {
 	Value = Speed:CreateSlider({
 		Name = 'Speed',
 		Min = 1,
-		Max = 250,
+		Max = inSCPRP and 31 or 250,
 		Default = 32,
 		Suffix = function(val)
 			return val == 1 and 'stud' or 'studs'
