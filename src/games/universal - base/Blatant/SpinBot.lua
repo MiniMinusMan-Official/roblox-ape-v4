@@ -25,8 +25,6 @@ if inSCPRP then
 	UpdateReplication = game:GetService("ReplicatedStorage").Remotes.UpdateReplication
 end
 
-local VisualGhost = nil
-
 local function destroyGhost()
 	if VisualGhost then
 		VisualGhost:Destroy()
@@ -39,19 +37,27 @@ end
 local function createGhost(charModel)
 	destroyGhost()
 	if not charModel then return end
+
 	charModel.Archivable = true
 	VisualGhost = charModel:Clone()
 	charModel.Archivable = false
-	VisualGhost.Name = "AntiAimVisualGhost"
-	local ghostHumanoid = VisualGhost:FindFirstChildOfClass("Humanoid")
-	if ghostHumanoid then ghostHumanoid:Destroy() end
+
+	VisualGhost.Name = 'AntiAimVisualGhost'
+
+	local ghostHumanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
+	if ghostHumanoid then
+		ghostHumanoid:Destroy()
+	end
+
 	local GHOST_COLOR = Color3.fromRGB(5, 133, 104)
-	for _, child in ipairs(VisualGhost:GetChildren()) do
-		if child:IsA("Accessory") or child:IsA("Accoutrement") then
+
+	for _, child in VisualGhost:GetChildren() do
+		if child:IsA('Accessory') or child:IsA('Accoutrement') then
 			child:Destroy()
 		end
 	end
-	for _, child in ipairs(VisualGhost:GetDescendants()) do
+
+	for _, child in VisualGhost:GetDescendants() do
 		if child:IsA('BasePart') then
 			child.Anchored = true
 			child.CanCollide = false
@@ -76,20 +82,17 @@ local function createGhost(charModel)
 			or child:IsA('Animator') then
 			child:Destroy()
 		end
-		elseif child:IsA("Decal") or child:IsA("Clothing") or child:IsA("ShirtGraphic") then
-			child:Destroy()
-		elseif child:IsA("Script") or child:IsA("LocalScript") or child:IsA("BillboardGui") or child:IsA("Animator") then
-			child:Destroy()
-		end
 	end
-	local highlight = Instance.new("Highlight")
-	highlight.Name = "GhostHighlight"
+
+	local highlight = Instance.new('Highlight')
+	highlight.Name = 'GhostHighlight'
 	highlight.Adornee = VisualGhost
 	highlight.FillColor = GHOST_COLOR
 	highlight.FillTransparency = 0.75
 	highlight.OutlineColor = Color3.fromRGB(0, 255, 128)
 	highlight.OutlineTransparency = 0
 	highlight.Parent = VisualGhost
+
 	VisualGhost.Parent = workspace
 end
 
