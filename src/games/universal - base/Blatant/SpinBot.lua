@@ -230,6 +230,11 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 			end))
 		else
 			destroyGhost()
+			UpdateReplication:FireServer((function(b_vals)
+				local b = buffer.create(#b_vals)
+				for i = 1, #b_vals do buffer.writeu8(b, i - 1, b_vals[i]) end
+				return b
+			end)({ 2, 0, 0 }))
 		end
 	end,
 	Tooltip = 'Makes your character continuously spin'
