@@ -3,8 +3,12 @@ local XToggle
 local YToggle
 local ZToggle
 local Value
-local DownAntiAim
-local UpAntiAim
+local AntiAim
+local AntiAimPitch
+local AntiAimPitchRandom
+local AntiAimMode
+local lastupd = 0
+local jit_tog = false
 local SpinAngle = 0
 local OldAutoRotate
 
@@ -42,18 +46,41 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 					root.CFrame = CFrame.new(root.Position) * CFrame.Angles(XToggle.Enabled and SpinAngle or x, YToggle.Enabled and SpinAngle or y, ZToggle.Enabled and SpinAngle or z)
 					
 					if inSCPRP then
-						if DownAntiAim.Enabled then
-							UpdateReplication:FireServer((function(bytes)
-								local b = buffer.create(#bytes)
-								for i = 1, #bytes do buffer.writeu8(b, i - 1, bytes[i]) end
+						if AntiAim.Enabled then
+							local pitch = 0
+							local currentTime = tick()
+
+							if AntiAimMode.Value == 'Static' then
+								pitch = AntiAimPitch.Value
+							elseif AntiAimMode.Value == 'Random' then
+								if currentTime - lastupd >= 0.25 then
+									pitch = AntiAimPitchRandom:GetRandomValue()
+									lastupd = currentTime
+								else
+									pitch = lastPitchUpdate_Value 
+								end
+							elseif AntiAimMode.Value == 'Jitter' then
+								if currentTime - lastupd >= 0.25 then
+									jit_tog = not jit_tog
+									pitch = jit_tog and AntiAimPitchRandom.ValueMin or AntiAimPitchRandom.ValueMax
+									lastupd = currentTime
+								else
+									pitch = jit_tog and AntiAimPitchRandom.ValueMin or AntiAimPitchRandom.ValueMax
+								end
+							end
+							lastPitchUpdate_Value = pitch
+							local bytes = { 2, 0, 0 }
+							if pitch < 0 then
+								bytes[1], bytes[2], bytes[3] = 2, 1, 255 + pitch
+							else
+								bytes[1], bytes[2], bytes[3] = 2, 0, pitch
+							end
+
+							UpdateReplication:FireServer((function(b_vals)
+								local b = buffer.create(#b_vals)
+								for i = 1, #b_vals do buffer.writeu8(b, i - 1, b_vals[i]) end
 								return b
-							end)({ 2, 1, 176 }))
-						elseif UpAntiAim.Enabled then
-							UpdateReplication:FireServer((function(bytes)
-								local b = buffer.create(#bytes)
-								for i = 1, #bytes do buffer.writeu8(b, i - 1, bytes[i]) end
-								return b
-							end)({ 2, 0, 80 }))
+							end)(bytes))
 						end
 					end
 				end
@@ -73,8 +100,45 @@ Value = SpinBot:CreateSlider({
 	Default = 40
 })
 if inSCPRP then
-	DownAntiAim = SpinBot:CreateToggle({Name = 'Anti Aim (Down)'})
-	UpAntiAim = SpinBot:CreateToggle({Name = 'Anti Aim (Up)'})
+	AntiAimPitch = SpinBot:CreateSlider({
+		Name = 'Pitch',
+		Min = -90,
+		Max = 90,
+		Default = 0
+	})
+	AntiAimPitchRandom = SpinBot:CreateTwoSlider({
+		Name = 'Pitch',
+		Min = -90,
+		Max = 90,
+		DefaultMin = -45,
+		DefaultMax = 45
+	})
+	AntiAimMode = SpinBot:CreateDropdown({
+		Name = 'AimType',
+		List = {'Static', 'Random', 'Jitter'},
+		Function = function(val)
+			Options.AntiAimPitch.Object.Visible = AntiAimMode.Value == 'Static' and true or false
+			Options.AntiAimPitchRandom.Object.Visible = (AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) or false
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
+		end,
+		Tooltip = methodTooltip
+	})
+	AntiAim = SpinBot:CreateToggle({
+		Name = 'Anti Aim',
+		Function = function(val)
+			Options.AntiAimPitch.Object.Visible = (AntiAimMode.Value == 'Static' and val and true) or false
+			Options.AntiAimPitchRandom.Object.Visible = ((AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) and val) or false
+			Options.AntiAimMode.Object.Visible = val
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
+		end,
+		Tooltip = methodTooltip
+	})
 end
 XToggle = SpinBot:CreateToggle({Name = 'Spin X'})
 YToggle = SpinBot:CreateToggle({
