@@ -65,10 +65,21 @@ bkg.Position = UDim2.fromOffset(10, 37)
 bkg.BackgroundColor3 = color.Light(uipallet.Main, 0.034)
 bkg.BorderSizePixel = 0
 bkg.Parent = slider
+
+local function valueToScale(value)
+	local range = optionsettings.Max - optionsettings.Min
+	if range == 0 then
+		return 0.5
+	end
+
+	local normalized = math.clamp((value - optionsettings.Min) / range, 0, 1)
+	return 0.04 + (normalized * 0.96)
+end
+
 local fill = bkg:Clone()
 fill.Name = 'Fill'
-fill.Position = UDim2.fromScale(math.clamp(optionapi.ValueMin / optionsettings.Max, 0.04, 0.96), 0)
-fill.Size = UDim2.fromScale(math.clamp(math.clamp(optionapi.ValueMax / optionsettings.Max, 0, 1), 0.04, 0.96) - fill.Position.X.Scale, 1)
+fill.Position = UDim2.fromScale(valueToScale(optionapi.ValueMin), 0)
+fill.Size = UDim2.fromScale(valueToScale(optionapi.ValueMax) - valueToScale(optionapi.ValueMin), 1)
 fill.BackgroundColor3 = Color3.fromHSV(mainapi.GUIColor.Hue, mainapi.GUIColor.Sat, mainapi.GUIColor.Value)
 fill.Parent = bkg
 local knobholder = Instance.new('Frame')
@@ -129,14 +140,28 @@ function optionapi:GetRandomValue()
 end
 
 function optionapi:SetValue(max, value)
-	if tonumber(value) == math.huge or value ~= value then return end
-	self[max and 'ValueMax' or 'ValueMin'] = value
-	valuebutton.Text = self.ValueMax
-	valuebutton2.Text = self.ValueMin
-	local size = math.clamp(math.clamp(self.ValueMin / optionsettings.Max, 0, 1), 0.04, 0.96)
+	value = tonumber(value)
+
+	if not value or value == math.huge or value == -math.huge or value ~= value then
+		return
+	end
+
+	value = math.clamp(value, optionsettings.Min, optionsettings.Max)
+	if max then
+		self.ValueMax = math.max(value, self.ValueMin)
+	else
+		self.ValueMin = math.min(value, self.ValueMax)
+	end
+
+	valuebutton.Text = tostring(self.ValueMax)
+	valuebutton2.Text = tostring(self.ValueMin)
+
+	local minScale = valueToScale(self.ValueMin)
+	local maxScale = valueToScale(self.ValueMax)
+
 	tween:Tween(fill, TweenInfo.new(0.1), {
-		Position = UDim2.fromScale(size, 0),
-		Size = UDim2.fromScale(math.clamp(math.clamp(math.clamp(self.ValueMax / optionsettings.Max, 0.04, 0.96), 0.04, 0.96) - size, 0, 1), 1)
+		Position = UDim2.fromScale(minScale, 0),
+		Size = UDim2.fromScale(math.max(maxScale - minScale, 0), 1)
 	})
 end
 
