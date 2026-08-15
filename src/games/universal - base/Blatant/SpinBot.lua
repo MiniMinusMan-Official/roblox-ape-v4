@@ -100,6 +100,32 @@ Value = SpinBot:CreateSlider({
 	Default = 40
 })
 if inSCPRP then
+	AntiAim = SpinBot:CreateToggle({
+		Name = 'Anti Aim',
+		Function = function(val)
+			AntiAimPitch.Object.Visible = (AntiAimMode.Value == 'Static' and val and true) or false
+			AntiAimPitchRandom.Object.Visible = ((AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) and val) or false
+			AntiAimMode.Object.Visible = val
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
+		end,
+		Tooltip = methodTooltip
+	})
+	AntiAimMode = SpinBot:CreateDropdown({
+		Name = 'AimType',
+		List = {'Static', 'Random', 'Jitter'},
+		Function = function(val)
+			AntiAimPitch.Object.Visible = AntiAimMode.Value == 'Static' and true or false
+			AntiAimPitchRandom.Object.Visible = (AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) or false
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
+		end,
+		Tooltip = methodTooltip
+	})
 	AntiAimPitch = SpinBot:CreateSlider({
 		Name = 'Pitch',
 		Min = -90,
@@ -110,34 +136,8 @@ if inSCPRP then
 		Name = 'Pitch',
 		Min = -90,
 		Max = 90,
-		DefaultMin = -45,
-		DefaultMax = 45
-	})
-	AntiAimMode = SpinBot:CreateDropdown({
-		Name = 'AimType',
-		List = {'Static', 'Random', 'Jitter'},
-		Function = function(val)
-			Options.AntiAimPitch.Object.Visible = AntiAimMode.Value == 'Static' and true or false
-			Options.AntiAimPitchRandom.Object.Visible = (AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) or false
-			if SpinBot.Enabled then
-				SpinBot:Toggle()
-				SpinBot:Toggle()
-			end
-		end,
-		Tooltip = methodTooltip
-	})
-	AntiAim = SpinBot:CreateToggle({
-		Name = 'Anti Aim',
-		Function = function(val)
-			Options.AntiAimPitch.Object.Visible = (AntiAimMode.Value == 'Static' and val and true) or false
-			Options.AntiAimPitchRandom.Object.Visible = ((AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) and val) or false
-			Options.AntiAimMode.Object.Visible = val
-			if SpinBot.Enabled then
-				SpinBot:Toggle()
-				SpinBot:Toggle()
-			end
-		end,
-		Tooltip = methodTooltip
+		DefaultMin = -90,
+		DefaultMax = 90
 	})
 end
 XToggle = SpinBot:CreateToggle({Name = 'Spin X'})
