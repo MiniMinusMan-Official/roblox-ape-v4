@@ -1423,7 +1423,7 @@ function mainapi:UpdateTextGUI(afterload)
 		label.Parent = textguiholder
 		addCorner(label, UDim.new(0, 2))
 		local padding = Instance.new('UIPadding')
-		padding.PaddingLeft = UDim.new(0, 7)
+		padding.PaddingLeft = UDim.new(0, -3)
 		padding.PaddingRight = UDim.new(0, 3)
 		padding.Parent = label
 		local line = Instance.new('ImageLabel')
