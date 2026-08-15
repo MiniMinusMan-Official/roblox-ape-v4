@@ -148,21 +148,21 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 						local pitch = 0
 						local currentTime = tick()
 						if AntiAimMode.Value == 'Static' then
-							pitch = AntiAimPitch.Value * 1.9888888
+							pitch = AntiAimPitch.Value
 						elseif AntiAimMode.Value == 'Random' then
-							if currentTime - lastupd >= 0.55 then
-								pitch = AntiAimPitchRandom:GetRandomValue() * 1.9888888
+							if currentTime - lastupd >= 1 then
+								pitch = AntiAimPitchRandom:GetRandomValue()
 								lastupd = currentTime
 							else
 								pitch = lastPitchUpdate_Value 
 							end
 						elseif AntiAimMode.Value == 'Jitter' then
-							if currentTime - lastupd >= 0.55 then
+							if currentTime - lastupd >= 1 then
 								jit_tog = not jit_tog
-								pitch = jit_tog and AntiAimPitchRandom.ValueMin * 1.9888888 or AntiAimPitchRandom.ValueMax * 1.9888888
+								pitch = jit_tog and AntiAimPitchRandom.ValueMin or AntiAimPitchRandom.ValueMax
 								lastupd = currentTime
 							else
-								pitch = jit_tog and AntiAimPitchRandom.ValueMin * 1.9888888 or AntiAimPitchRandom.ValueMax * 1.9888888
+								pitch = jit_tog and AntiAimPitchRandom.ValueMin or AntiAimPitchRandom.ValueMax
 							end
 						end
 						lastPitchUpdate_Value = pitch
