@@ -43,33 +43,32 @@ local function createGhost(charModel)
 	charModel.Archivable = false
 
 	VisualGhost.Name = "AntiAimVisualGhost"
-
-	-- Destroy the ghost's Humanoid so Roblox physics/animations stop controlling it
 	local ghostHumanoid = VisualGhost:FindFirstChildOfClass("Humanoid")
 	if ghostHumanoid then
 		ghostHumanoid:Destroy()
 	end
-
-	-- Disable all collision/interaction properties so it doesn't bump your real character
 	for _, child in ipairs(VisualGhost:GetDescendants()) do
 		if child:IsA("BasePart") then
 			child.CanCollide = false
 			child.CanTouch = false
 			child.CanQuery = false
-			child.Anchored = true
 			child.Transparency = 0.75
+			
+			if child.Name == "HumanoidRootPart" then
+				child.Anchored = true
+			else
+				child.Anchored = false
+			end
 		elseif child:IsA("Script") or child:IsA("LocalScript") or child:IsA("BillboardGui") or child:IsA("Animator") then
 			child:Destroy()
 		end
 	end
-
-	-- Add Green Highlight
 	local highlight = Instance.new("Highlight")
 	highlight.Name = "GhostHighlight"
 	highlight.Adornee = VisualGhost
-	highlight.FillColor = Color3.fromRGB(0, 255, 100)
-	highlight.FillTransparency = 0.8
-	highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+	highlight.FillColor = Color3.fromRGB(5, 133, 104)
+	highlight.FillTransparency = 0.9
+	highlight.OutlineColor = Color3.fromRGB(5, 133, 104)
 	highlight.OutlineTransparency = 0
 	highlight.Parent = VisualGhost
 
@@ -127,13 +126,19 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 						end
 						lastPitchUpdate_Value = pitch
 						if VisualGhost then
-							VisualGhost:SetPrimaryPartCFrame(CFrame.new(root.Position) * CFrame.Angles(0, fakeYaw, 0))
-
-							local ghostLowerTorso = VisualGhost:FindFirstChild("LowerTorso")
-							if ghostLowerTorso then
-								local rootJoint = ghostLowerTorso:FindFirstChild("Root") or (VisualGhost:FindFirstChild("HumanoidRootPart") and VisualGhost.HumanoidRootPart:FindFirstChild("Root"))
-								if rootJoint and rootJoint:IsA("Motor6D") then
-									rootJoint.Transform = CFrame.Angles(math.rad(pitch), 0, 0)
+							local ghostRoot = VisualGhost:FindFirstChild("HumanoidRootPart")
+							if ghostRoot then
+								local pitchRad = math.rad(pitch)
+								ghostRoot.CFrame = CFrame.new(root.Position) 
+									* CFrame.Angles(0, fakeYaw, 0) 
+									* CFrame.Angles(pitchRad, 0, 0)
+								local ghostLowerTorso = VisualGhost:FindFirstChild("LowerTorso")
+								if ghostLowerTorso then
+									local rootJoint = ghostLowerTorso:FindFirstChild("Root") 
+										or ghostRoot:FindFirstChild("Root")
+									if rootJoint and rootJoint:IsA("Motor6D") then
+										rootJoint.C0 = CFrame.new(rootJoint.C0.Position) * CFrame.Angles(pitchRad, 0, 0)
+									end
 								end
 							end
 						end
