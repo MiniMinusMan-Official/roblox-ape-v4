@@ -1423,12 +1423,13 @@ function mainapi:UpdateTextGUI(afterload)
 		label.Parent = textguiholder
 		addCorner(label, UDim.new(0, 2))
 		local padding = Instance.new('UIPadding')
-		padding.PaddingLeft = UDim.new(0, -3)
+		padding.PaddingLeft = UDim.new(0, 7)
 		padding.PaddingRight = UDim.new(0, 3)
 		padding.Parent = label
 		local line = Instance.new('ImageLabel')
 		line.Name = 'Accent'
 		line.Size = UDim2.new(0, 4, 1, 0)
+		line.Position = UDim2.fromOffset(-9, 0)
 		line.BackgroundTransparency = 1
 		line.Image = getcustomasset('newvape/assets/liquidbounce/textgui.png')
 		line.ScaleType = Enum.ScaleType.Stretch
