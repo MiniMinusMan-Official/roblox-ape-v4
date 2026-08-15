@@ -3,8 +3,19 @@ local XToggle
 local YToggle
 local ZToggle
 local Value
+local DownAntiAim
+local UpAntiAim
 local SpinAngle = 0
 local OldAutoRotate
+
+local UpdateReplication
+
+local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
+
+if inSCPRP then
+	UpdateReplication = game:GetService("ReplicatedStorage").Remotes.UpdateReplication
+end
+
 
 SpinBot = vape.Categories.Blatant:CreateModule({
 	Name = 'SpinBot',
@@ -29,6 +40,22 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 					local x, y, z = root.CFrame:ToOrientation()
 
 					root.CFrame = CFrame.new(root.Position) * CFrame.Angles(XToggle.Enabled and SpinAngle or x, YToggle.Enabled and SpinAngle or y, ZToggle.Enabled and SpinAngle or z)
+					
+					if inSCPRP then
+						if DownAntiAim.Enabled then
+							UpdateReplication:FireServer((function(bytes)
+								local b = buffer.create(#bytes)
+								for i = 1, #bytes do buffer.writeu8(b, i - 1, bytes[i]) end
+								return b
+							end)({ 2, 1, 176 }))
+						elseif UpAntiAim.Enabled then
+							UpdateReplication:FireServer((function(bytes)
+								local b = buffer.create(#bytes)
+								for i = 1, #bytes do buffer.writeu8(b, i - 1, bytes[i]) end
+								return b
+							end)({ 2, 0, 80 }))
+						end
+					end
 				end
 			end))
 		else
@@ -45,6 +72,10 @@ Value = SpinBot:CreateSlider({
 	Max = 100,
 	Default = 40
 })
+if inSCPRP then
+	DownAntiAim = SpinBot:CreateToggle({Name = 'Anti Aim (Down)'})
+	UpAntiAim = SpinBot:CreateToggle({Name = 'Anti Aim (Up)'})
+end
 XToggle = SpinBot:CreateToggle({Name = 'Spin X'})
 YToggle = SpinBot:CreateToggle({
 	Name = 'Spin Y',
