@@ -1413,7 +1413,7 @@ function mainapi:UpdateTextGUI(afterload)
 		label.BackgroundColor3 = Color3.fromRGB(2, 5, 10)
 		label.BackgroundTransparency = textgui.BackgroundOption and textgui.BackgroundOption.Enabled and 0.18 or 1
 		label.BorderSizePixel = 0
-		label.ClipsDescendants = true
+		label.ClipsDescendants = false
 		label.Text = displayText
 		label.TextXAlignment = Enum.TextXAlignment.Left
 		label.TextColor3 = Color3.fromRGB(235, 238, 244)
@@ -1429,7 +1429,7 @@ function mainapi:UpdateTextGUI(afterload)
 		local line = Instance.new('ImageLabel')
 		line.Name = 'Accent'
 		line.Size = UDim2.new(0, 4, 1, 0)
-		line.Position = UDim2.fromOffset(-7, 0)
+		line.Position = UDim2.fromOffset(-9, 0)
 		line.BackgroundTransparency = 1
 		line.Image = getcustomasset('newvape/assets/liquidbounce/textgui.png')
 		line.ScaleType = Enum.ScaleType.Stretch
