@@ -74,24 +74,54 @@ local uipallet = {
 local getcustomassets = {
 	['newvape/assets/liquidbounce/logo.png'] = 'rbxasset://liquidbounce/logo.png',
 	['newvape/assets/liquidbounce/textgui.png'] = 'rbxasset://liquidbounce/textgui.png',
-	['newvape/assets/new/add.png'] = 'rbxassetid://14368300605',
-	['newvape/assets/new/allowedicon.png'] = 'rbxassetid://14368302000',
-	['newvape/assets/new/allowedtab.png'] = 'rbxassetid://14368302875',
-	['newvape/assets/new/closemini.png'] = 'rbxassetid://14368310467',
-	['newvape/assets/new/colorpreview.png'] = 'rbxassetid://14368311578',
-	['newvape/assets/new/expandicon.png'] = 'rbxassetid://14368353032',
-	['newvape/assets/new/guislider.png'] = 'rbxassetid://14368320020',
-	['newvape/assets/new/guisliderrain.png'] = 'rbxassetid://14368321228',
-	['newvape/assets/new/rainbow_1.png'] = 'rbxassetid://14368344374',
-	['newvape/assets/new/rainbow_2.png'] = 'rbxassetid://14368345149',
-	['newvape/assets/new/rainbow_3.png'] = 'rbxassetid://14368345840',
-	['newvape/assets/new/rainbow_4.png'] = 'rbxassetid://14368346696',
-	['newvape/assets/new/targetnpc1.png'] = 'rbxassetid://14497400332',
-	['newvape/assets/new/targetnpc2.png'] = 'rbxassetid://14497402744',
-	['newvape/assets/new/targetplayers1.png'] = 'rbxassetid://14497396015',
-	['newvape/assets/new/targetplayers2.png'] = 'rbxassetid://14497397862',
-	['newvape/assets/new/targetstab.png'] = 'rbxassetid://14497393895',
-	['newvape/assets/new/blur.png'] = 'rbxassetid://14898786664'
+	['newvape/assets/liquidbounce/add.png'] = 'rbxasset://liquidbounce/add.png',
+	['newvape/assets/liquidbounce/allowedicon.png'] = 'rbxasset://liquidbounce/allowedicon.png',
+	['newvape/assets/liquidbounce/allowedtab.png'] = 'rbxasset://liquidbounce/allowedtab.png',
+	['newvape/assets/liquidbounce/back.png'] = 'rbxasset://liquidbounce/back.png',
+	['newvape/assets/liquidbounce/blur.png'] = 'rbxasset://liquidbounce/blur.png',
+	['newvape/assets/liquidbounce/closemini.png'] = 'rbxasset://liquidbounce/closemini.png',
+	['newvape/assets/liquidbounce/colorpreview.png'] = 'rbxasset://liquidbounce/colorpreview.png',
+	['newvape/assets/liquidbounce/expandicon.png'] = 'rbxasset://liquidbounce/expandicon.png',
+	['newvape/assets/liquidbounce/guislider.png'] = 'rbxasset://liquidbounce/guislider.png',
+	['newvape/assets/liquidbounce/guisliderrain.png'] = 'rbxasset://liquidbounce/guisliderrain.png',
+	['newvape/assets/liquidbounce/rainbow_1.png'] = 'rbxasset://liquidbounce/rainbow_1.png',
+	['newvape/assets/liquidbounce/rainbow_2.png'] = 'rbxasset://liquidbounce/rainbow_2.png',
+	['newvape/assets/liquidbounce/rainbow_3.png'] = 'rbxasset://liquidbounce/rainbow_3.png',
+	['newvape/assets/liquidbounce/rainbow_4.png'] = 'rbxasset://liquidbounce/rainbow_4.png',
+	['newvape/assets/liquidbounce/targetnpc1.png'] = 'rbxasset://liquidbounce/targetnpc1.png',
+	['newvape/assets/liquidbounce/targetnpc2.png'] = 'rbxasset://liquidbounce/targetnpc2.png',
+	['newvape/assets/liquidbounce/targetplayers1.png'] = 'rbxasset://liquidbounce/targetplayers1.png',
+	['newvape/assets/liquidbounce/targetplayers2.png'] = 'rbxasset://liquidbounce/targetplayers2.png',
+	['newvape/assets/liquidbounce/targetstab.png'] = 'rbxasset://liquidbounce/targetstab.png',
+	['newvape/assets/liquidbounce/combat.png'] = 'rbxasset://liquidbounce/combat.png',
+	['newvape/assets/liquidbounce/exploit.png'] = 'rbxasset://liquidbounce/exploit.png',
+	['newvape/assets/liquidbounce/fun.png'] = 'rbxasset://liquidbounce/fun.png',
+	['newvape/assets/liquidbounce/misc.png'] = 'rbxasset://liquidbounce/misc.png',
+	['newvape/assets/liquidbounce/movement.png'] = 'rbxasset://liquidbounce/movement.png',
+	['newvape/assets/liquidbounce/player.png'] = 'rbxasset://liquidbounce/player.png',
+	['newvape/assets/liquidbounce/render.png'] = 'rbxasset://liquidbounce/render.png',
+	['newvape/assets/liquidbounce/settings-expand.png'] = 'rbxasset://liquidbounce/settings-expand.png',
+	['newvape/assets/liquidbounce/world.png'] = 'rbxasset://liquidbounce/world.png',
+	['newvape/assets/liquidbounce/notification-error.png'] = 'rbxasset://liquidbounce/notification-error.png',
+	['newvape/assets/liquidbounce/notification-info.png'] = 'rbxasset://liquidbounce/notification-info.png',
+	['newvape/assets/liquidbounce/notification-success.png'] = 'rbxasset://liquidbounce/notification-success.png',
+	['newvape/assets/liquidbounce/tabgui-combat-active.png'] = 'rbxasset://liquidbounce/tabgui-combat-active.png',
+	['newvape/assets/liquidbounce/tabgui-combat.png'] = 'rbxasset://liquidbounce/tabgui-combat.png',
+	['newvape/assets/liquidbounce/tabgui-exploit-active.png'] = 'rbxasset://liquidbounce/tabgui-exploit-active.png',
+	['newvape/assets/liquidbounce/tabgui-exploit.png'] = 'rbxasset://liquidbounce/tabgui-exploit.png',
+	['newvape/assets/liquidbounce/tabgui-fun-active.png'] = 'rbxasset://liquidbounce/tabgui-fun-active.png',
+	['newvape/assets/liquidbounce/tabgui-fun.png'] = 'rbxasset://liquidbounce/tabgui-fun.png',
+	['newvape/assets/liquidbounce/tabgui-misc-active.png'] = 'rbxasset://liquidbounce/tabgui-misc-active.png',
+	['newvape/assets/liquidbounce/tabgui-misc.png'] = 'rbxasset://liquidbounce/tabgui-misc.png',
+	['newvape/assets/liquidbounce/tabgui-movement-active.png'] = 'rbxasset://liquidbounce/tabgui-movement-active.png',
+	['newvape/assets/liquidbounce/tabgui-movement.png'] = 'rbxasset://liquidbounce/tabgui-movement.png',
+	['newvape/assets/liquidbounce/tabgui-player-active.png'] = 'rbxasset://liquidbounce/tabgui-player-active.png',
+	['newvape/assets/liquidbounce/tabgui-player.png'] = 'rbxasset://liquidbounce/tabgui-player.png',
+	['newvape/assets/liquidbounce/tabgui-render-active.png'] = 'rbxasset://liquidbounce/tabgui-render-active.png',
+	['newvape/assets/liquidbounce/tabgui-render.png'] = 'rbxasset://liquidbounce/tabgui-render.png',
+	['newvape/assets/liquidbounce/tabgui-world-active.png'] = 'rbxasset://liquidbounce/tabgui-world-active.png',
+	['newvape/assets/liquidbounce/tabgui-world.png'] = 'rbxasset://liquidbounce/tabgui-world.png',
+	['newvape/assets/liquidbounce/watermark-lb-logo.png'] = 'rbxasset://liquidbounce/watermark-lb-logo.png'
 }
 
 local isfile = isfile or function(file)
@@ -116,7 +146,7 @@ local function addBlur(parent)
 	blur.Size = UDim2.new(1, 42, 1, 42)
 	blur.Position = UDim2.fromOffset(-24, -15)
 	blur.BackgroundTransparency = 1
-	blur.Image = getcustomasset('newvape/assets/new/blur.png')
+	blur.Image = getcustomasset('newvape/assets/liquidbounce/blur.png')
 	blur.ScaleType = Enum.ScaleType.Slice
 	blur.SliceCenter = Rect.new(44, 38, 804, 595)
 	blur.Parent = parent
@@ -418,7 +448,8 @@ mainapi.Libraries = {
 local components
 components = {
 --Components
-	Divider = function(children, text)
+	Divider = function(optionsettings, children)
+		local text = type(optionsettings) == 'table' and (optionsettings.Name or optionsettings.Text) or optionsettings
 		local holder = Instance.new('Frame')
 		holder.Name = 'Divider'
 		holder.Size = UDim2.new(1, 0, 0, text and 25 or 1)
@@ -512,7 +543,28 @@ local categoryGlyphs = {
 	Client = '⬟',
 	Legit = '◇'
 }
+local categoryIcons = {
+	Combat = 'newvape/assets/liquidbounce/combat.png',
+	Exploit = 'newvape/assets/liquidbounce/exploit.png',
+	Fun = 'newvape/assets/liquidbounce/fun.png',
+	Misc = 'newvape/assets/liquidbounce/misc.png',
+	Movement = 'newvape/assets/liquidbounce/movement.png',
+	Player = 'newvape/assets/liquidbounce/player.png',
+	Render = 'newvape/assets/liquidbounce/render.png',
+	World = 'newvape/assets/liquidbounce/world.png'
+}
 local categoryCount = 0
+
+local function setCategoryNavColor(category, colorValue)
+	if category.NavButton then category.NavButton.TextColor3 = colorValue end
+	if category.NavIcon then
+		if category.NavIcon:IsA('ImageLabel') then
+			category.NavIcon.ImageColor3 = colorValue
+		else
+			category.NavIcon.TextColor3 = colorValue
+		end
+	end
+end
 
 function mainapi:CreateCategory(categorysettings)
 	categoryCount += 1
@@ -551,15 +603,26 @@ function mainapi:CreateCategory(categorysettings)
 	titlebar.BackgroundTransparency = 0.02
 	titlebar.BorderSizePixel = 0
 	titlebar.Parent = window
-	local icon = Instance.new('TextLabel')
+	local iconPath = categorysettings.Icon or categoryIcons[displayName] or categoryIcons[categorysettings.Name]
+	local icon
+	if iconPath then
+		icon = Instance.new('ImageLabel')
+		icon.Size = UDim2.fromOffset(16, 16)
+		icon.Position = UDim2.fromOffset(10, 8)
+		icon.Image = iconPath:find('^rbxasset') and iconPath or getcustomasset(iconPath)
+		icon.ImageColor3 = Color3.fromRGB(239, 241, 246)
+		icon.ScaleType = Enum.ScaleType.Fit
+	else
+		icon = Instance.new('TextLabel')
+		icon.Size = UDim2.fromOffset(27, 30)
+		icon.Position = UDim2.fromOffset(6, 0)
+		icon.Text = categorysettings.Glyph or categoryGlyphs[displayName] or categoryGlyphs[categorysettings.Name] or '●'
+		icon.TextColor3 = Color3.fromRGB(239, 241, 246)
+		icon.TextSize = 13
+		icon.FontFace = uipallet.FontSemiBold
+	end
 	icon.Name = 'Icon'
-	icon.Size = UDim2.fromOffset(27, 30)
-	icon.Position = UDim2.fromOffset(6, 0)
 	icon.BackgroundTransparency = 1
-	icon.Text = categorysettings.Glyph or categoryGlyphs[displayName] or categoryGlyphs[categorysettings.Name] or '●'
-	icon.TextColor3 = Color3.fromRGB(239, 241, 246)
-	icon.TextSize = 13
-	icon.FontFace = uipallet.FontSemiBold
 	icon.Parent = titlebar
 	local title = Instance.new('TextLabel')
 	title.Name = 'Title'
@@ -655,15 +718,14 @@ function mainapi:CreateCategory(categorysettings)
 		activebar.BackgroundTransparency = 1
 		activebar.BorderSizePixel = 0
 		activebar.Parent = modulebutton
-		local expandicon = Instance.new('TextLabel')
+		local expandicon = Instance.new('ImageLabel')
 		expandicon.Name = 'Expand'
-		expandicon.Size = UDim2.fromOffset(22, 28)
-		expandicon.Position = UDim2.new(1, -25, 0, 0)
+		expandicon.Size = UDim2.fromOffset(10, 6)
+		expandicon.Position = UDim2.new(1, -18, 0.5, -3)
 		expandicon.BackgroundTransparency = 1
-		expandicon.Text = '›'
-		expandicon.TextColor3 = Color3.fromRGB(119, 125, 136)
-		expandicon.TextSize = 19
-		expandicon.FontFace = uipallet.Font
+		expandicon.Image = getcustomasset('newvape/assets/liquidbounce/settings-expand.png')
+		expandicon.ImageColor3 = Color3.fromRGB(119, 125, 136)
+		expandicon.Rotation = -90
 		expandicon.Parent = modulebutton
 		local modulechildren = Instance.new('Frame')
 		modulechildren.Name = modulesettings.Name..'Children'
@@ -714,8 +776,8 @@ function mainapi:CreateCategory(categorysettings)
 				self.Expanded = value
 			end
 			modulechildren.Visible = self.Expanded
-			expandicon.Rotation = self.Expanded and 90 or 0
-			expandicon.TextColor3 = self.Expanded and uipallet.Main or Color3.fromRGB(119, 125, 136)
+			expandicon.Rotation = self.Expanded and 0 or -90
+			expandicon.ImageColor3 = self.Expanded and uipallet.Main or Color3.fromRGB(119, 125, 136)
 			resizeCategory()
 		end
 
@@ -805,12 +867,32 @@ function mainapi:CreateCategory(categorysettings)
 		nav.Size = UDim2.new(1, 0, 0, 30)
 		nav.BackgroundTransparency = 1
 		nav.AutoButtonColor = false
-		nav.Text = '      '..displayName
+		nav.Text = '        '..displayName
 		nav.TextXAlignment = Enum.TextXAlignment.Left
 		nav.TextColor3 = Color3.fromRGB(143, 148, 158)
 		nav.TextSize = 13
 		nav.FontFace = uipallet.Font
 		nav.Parent = categoryholder
+		local navicon
+		if iconPath then
+			navicon = Instance.new('ImageLabel')
+			navicon.Size = UDim2.fromOffset(14, 14)
+			navicon.Position = UDim2.fromOffset(17, 8)
+			navicon.Image = iconPath:find('^rbxasset') and iconPath or getcustomasset(iconPath)
+			navicon.ImageColor3 = Color3.fromRGB(143, 148, 158)
+			navicon.ScaleType = Enum.ScaleType.Fit
+		else
+			navicon = Instance.new('TextLabel')
+			navicon.Size = UDim2.fromOffset(16, 28)
+			navicon.Position = UDim2.fromOffset(16, 1)
+			navicon.Text = categorysettings.Glyph or categoryGlyphs[displayName] or categoryGlyphs[categorysettings.Name] or '●'
+			navicon.TextColor3 = Color3.fromRGB(143, 148, 158)
+			navicon.TextSize = 11
+			navicon.FontFace = uipallet.FontSemiBold
+		end
+		navicon.Name = 'Icon'
+		navicon.BackgroundTransparency = 1
+		navicon.Parent = nav
 		local navaccent = Instance.new('Frame')
 		navaccent.Name = 'Accent'
 		navaccent.Size = UDim2.new(0, 2, 0, 18)
@@ -819,9 +901,11 @@ function mainapi:CreateCategory(categorysettings)
 		navaccent.BackgroundTransparency = 1
 		navaccent.BorderSizePixel = 0
 		navaccent.Parent = nav
-		nav.MouseEnter:Connect(function() nav.TextColor3 = Color3.new(1, 1, 1) end)
+		categoryapi.NavButton = nav
+		categoryapi.NavIcon = navicon
+		nav.MouseEnter:Connect(function() setCategoryNavColor(categoryapi, Color3.new(1, 1, 1)) end)
 		nav.MouseLeave:Connect(function()
-			nav.TextColor3 = lastSelected == categoryapi and uipallet.Main or Color3.fromRGB(143, 148, 158)
+			setCategoryNavColor(categoryapi, lastSelected == categoryapi and uipallet.Main or Color3.fromRGB(143, 148, 158))
 		end)
 		nav.MouseButton1Click:Connect(function()
 			lastSelected = categoryapi
@@ -830,12 +914,11 @@ function mainapi:CreateCategory(categorysettings)
 			window.Position = UDim2.fromOffset(math.max(210, (gui.AbsoluteSize.X / scale.Scale - width) / 2), 120)
 			for _, other in mainapi.Categories do
 				if other.NavButton then
-					other.NavButton.TextColor3 = other == categoryapi and uipallet.Main or Color3.fromRGB(143, 148, 158)
+					setCategoryNavColor(other, other == categoryapi and uipallet.Main or Color3.fromRGB(143, 148, 158))
 					other.NavButton.Accent.BackgroundTransparency = other == categoryapi and 0 or 1
 				end
 			end
 		end)
-		categoryapi.NavButton = nav
 	end
 	resizeCategory(true)
 	return categoryapi
@@ -862,9 +945,18 @@ function mainapi:CreateNotification(title, text, duration, type)
 		accent.BackgroundColor3 = type == 'alert' and Color3.fromRGB(244, 73, 82) or type == 'warning' and Color3.fromRGB(240, 169, 60) or uipallet.Main
 		accent.BorderSizePixel = 0
 		accent.Parent = card
+		local statusicon = Instance.new('ImageLabel')
+		statusicon.Name = 'Icon'
+		statusicon.Size = UDim2.fromOffset(16, 16)
+		statusicon.Position = UDim2.fromOffset(13, 21)
+		statusicon.BackgroundTransparency = 1
+		statusicon.Image = getcustomasset('newvape/assets/liquidbounce/notification-'..(type == 'alert' and 'error' or type == 'warning' and 'info' or 'success')..'.png')
+		statusicon.ImageColor3 = accent.BackgroundColor3
+		statusicon.ScaleType = Enum.ScaleType.Fit
+		statusicon.Parent = card
 		local titlelabel = Instance.new('TextLabel')
-		titlelabel.Size = UDim2.new(1, -24, 0, 20)
-		titlelabel.Position = UDim2.fromOffset(14, 7)
+		titlelabel.Size = UDim2.new(1, -48, 0, 20)
+		titlelabel.Position = UDim2.fromOffset(38, 7)
 		titlelabel.BackgroundTransparency = 1
 		titlelabel.Text = title or 'LiquidBounce'
 		titlelabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -873,8 +965,8 @@ function mainapi:CreateNotification(title, text, duration, type)
 		titlelabel.FontFace = uipallet.FontSemiBold
 		titlelabel.Parent = card
 		local body = titlelabel:Clone()
-		body.Size = UDim2.new(1, -24, 0, 18)
-		body.Position = UDim2.fromOffset(14, 29)
+		body.Size = UDim2.new(1, -48, 0, 18)
+		body.Position = UDim2.fromOffset(38, 29)
 		body.Text = removeTags(text)
 		body.TextColor3 = Color3.fromRGB(151, 156, 167)
 		body.TextSize = 12

@@ -13,7 +13,8 @@ dropdown.Text = ''
 dropdown.Parent = children
 --addTooltip(dropdown, optionsettings.Tooltip or optionsettings.Name)
 local accentbar = Instance.new('Frame')
-accentbar.Size = UDim2.new(0, 4, 1, 0)
+accentbar.Name = 'Accent'
+accentbar.Size = UDim2.new(0, 2, 1, 0)
 accentbar.BackgroundColor3 = uipallet.Main
 accentbar.BorderSizePixel = 0
 accentbar.Parent = dropdown
@@ -38,12 +39,15 @@ title.TextSize = 14
 title.TextTruncate = Enum.TextTruncate.AtEnd
 title.FontFace = uipallet.FontSemiBold
 title.Parent = button
-local dropdownexpand = Instance.new('ImageButton')
+local dropdownexpand = Instance.new('TextLabel')
 dropdownexpand.Size = UDim2.fromOffset(6, 10)
 dropdownexpand.Position = UDim2.new(1, -15, 0, 14)
 dropdownexpand.AnchorPoint = Vector2.new(0.5, 0.5)
 dropdownexpand.BackgroundTransparency = 1
-dropdownexpand.Image = getcustomasset('newvape/assets/liquidbounce/expand.png')
+dropdownexpand.Text = '›'
+dropdownexpand.TextColor3 = Color3.fromRGB(220, 224, 232)
+dropdownexpand.TextSize = 18
+dropdownexpand.FontFace = uipallet.Font
 dropdownexpand.Parent = button
 optionsettings.Function = optionsettings.Function or function() end
 local dropdownchildren

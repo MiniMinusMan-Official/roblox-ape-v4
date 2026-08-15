@@ -1,7 +1,7 @@
 local optionapi = {
 	Type = 'TwoSlider',
 	ValueMin = optionsettings.DefaultMin or optionsettings.Min,
-	ValueMax = optionsettings.DefaultMax or 10,
+	ValueMax = optionsettings.DefaultMax or optionsettings.Max,
 	Max = optionsettings.Max,
 	Index = getTableSize(api.Options)
 }
@@ -15,7 +15,8 @@ slider.Text = ''
 slider.Parent = children
 --addTooltip(slider, optionsettings.Tooltip)
 local accentbar = Instance.new('Frame')
-accentbar.Size = UDim2.new(0, 4, 1, 0)
+accentbar.Name = 'Accent'
+accentbar.Size = UDim2.new(0, 2, 1, 0)
 accentbar.BackgroundColor3 = uipallet.Main
 accentbar.BorderSizePixel = 0
 accentbar.Parent = slider
@@ -70,8 +71,9 @@ bkg.BorderSizePixel = 0
 bkg.Parent = slider
 local fill = bkg:Clone()
 fill.Name = 'Fill'
-fill.Position = UDim2.fromScale(math.clamp(optionapi.ValueMin / optionsettings.Max, 0.04, 0.96), 0)
-fill.Size = UDim2.fromScale(math.clamp(math.clamp(optionapi.ValueMax / optionsettings.Max, 0, 1), 0.04, 0.96) - fill.Position.X.Scale, 1)
+local range = math.max(optionsettings.Max - optionsettings.Min, 0.000001)
+fill.Position = UDim2.fromScale(math.clamp((optionapi.ValueMin - optionsettings.Min) / range, 0.03, 0.97), 0)
+fill.Size = UDim2.fromScale(math.clamp((optionapi.ValueMax - optionsettings.Min) / range, 0.03, 0.97) - fill.Position.X.Scale, 1)
 fill.BackgroundColor3 = uipallet.Main
 fill.Parent = bkg
 local knobholder = Instance.new('Frame')
@@ -113,8 +115,8 @@ end
 
 function optionapi:Color(hue, sat, val, rainbowcheck)
 	fill.BackgroundColor3 = rainbowcheck and Color3.fromHSV(mainapi:Color((hue - (self.Index * 0.075)) % 1)) or Color3.fromHSV(hue, sat, val)
-	knob.ImageColor3 = fill.BackgroundColor3
-	knobholdermax.Knob.ImageColor3 = fill.BackgroundColor3
+	knob.BackgroundColor3 = fill.BackgroundColor3
+	knobholdermax.Knob.BackgroundColor3 = fill.BackgroundColor3
 end
 
 function optionapi:GetRandomValue()
@@ -123,13 +125,19 @@ end
 
 function optionapi:SetValue(max, value)
 	if tonumber(value) == math.huge or value ~= value then return end
+	value = math.clamp(value, optionsettings.Min, optionsettings.Max)
+	if max then
+		value = math.max(value, self.ValueMin)
+	else
+		value = math.min(value, self.ValueMax)
+	end
 	self[max and 'ValueMax' or 'ValueMin'] = value
 	valuebutton.Text = self.ValueMax
 	valuebutton2.Text = self.ValueMin
-	local size = math.clamp(math.clamp(self.ValueMin / optionsettings.Max, 0, 1), 0.03, 0.97)
+	local size = math.clamp((self.ValueMin - optionsettings.Min) / range, 0.03, 0.97)
 	tween:Tween(fill, TweenInfo.new(0.1), {
 		Position = UDim2.fromScale(size, 0),
-		Size = UDim2.fromScale(math.clamp(math.clamp(math.clamp(self.ValueMax / optionsettings.Max, 0.04, 0.96), 0.03, 0.97) - size, 0, 1), 1)
+		Size = UDim2.fromScale(math.clamp(math.clamp((self.ValueMax - optionsettings.Min) / range, 0.03, 0.97) - size, 0, 1), 1)
 	})
 end
 

@@ -7,7 +7,8 @@ button.Text = ''
 button.Parent = children
 --addTooltip(button, optionsettings.Tooltip)
 local accentbar = Instance.new('Frame')
-accentbar.Size = UDim2.new(0, 4, 1, 0)
+accentbar.Name = 'Accent'
+accentbar.Size = UDim2.new(0, 2, 1, 0)
 accentbar.BackgroundColor3 = uipallet.Main
 accentbar.BorderSizePixel = 0
 accentbar.Parent = button

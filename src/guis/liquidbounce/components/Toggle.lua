@@ -13,7 +13,8 @@ toggle.Text = ''
 toggle.Parent = children
 --addTooltip(toggle, optionsettings.Tooltip)
 local accentbar = Instance.new('Frame')
-accentbar.Size = UDim2.new(0, 4, 1, 0)
+accentbar.Name = 'Accent'
+accentbar.Size = UDim2.new(0, 2, 1, 0)
 accentbar.BackgroundColor3 = uipallet.Main
 accentbar.BorderSizePixel = 0
 accentbar.Parent = toggle
@@ -31,7 +32,7 @@ local knobholder = Instance.new('Frame')
 knobholder.Name = 'Knob'
 knobholder.Size = UDim2.fromOffset(22, 8)
 knobholder.Position = UDim2.fromOffset(11, 10)
-knobholder.BackgroundColor3 = color.Dark(uipallet.Text, 0.2)
+knobholder.BackgroundColor3 = Color3.fromRGB(55, 61, 72)
 knobholder.Parent = toggle
 addCorner(knobholder, UDim.new(1, 0))
 local knob = knobholder:Clone()

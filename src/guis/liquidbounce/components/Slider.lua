@@ -14,7 +14,8 @@ slider.Text = ''
 slider.Parent = children
 --addTooltip(slider, optionsettings.Tooltip)
 local accentbar = Instance.new('Frame')
-accentbar.Size = UDim2.new(0, 4, 1, 0)
+accentbar.Name = 'Accent'
+accentbar.Size = UDim2.new(0, 2, 1, 0)
 accentbar.BackgroundColor3 = uipallet.Main
 accentbar.BorderSizePixel = 0
 accentbar.Parent = slider
@@ -62,7 +63,7 @@ bkg.BorderSizePixel = 0
 bkg.Parent = slider
 local fill = bkg:Clone()
 fill.Name = 'Fill'
-fill.Size = UDim2.fromScale(math.clamp((optionapi.Value - optionsettings.Min) / optionsettings.Max, 0.03, 0.97), 1)
+fill.Size = UDim2.fromScale(math.clamp((optionapi.Value - optionsettings.Min) / math.max(optionsettings.Max - optionsettings.Min, 0.000001), 0.03, 0.97), 1)
 fill.Position = UDim2.new()
 fill.BackgroundColor3 = uipallet.Main
 fill.BorderSizePixel = 0
@@ -101,10 +102,11 @@ end
 
 function optionapi:SetValue(value, pos, final)
 	if tonumber(value) == math.huge or value ~= value then return end
+	value = math.clamp(value, optionsettings.Min, optionsettings.Max)
 	local check = self.Value ~= value
 	self.Value = value
 	tween:Tween(fill, uipallet.Tween, {
-		Size = UDim2.fromScale(math.clamp(pos or math.clamp(value / optionsettings.Max, 0, 1), 0.03, 0.97), 1)
+		Size = UDim2.fromScale(math.clamp(pos or math.clamp((value - optionsettings.Min) / math.max(optionsettings.Max - optionsettings.Min, 0.000001), 0, 1), 0.03, 0.97), 1)
 	})
 	valuebutton.Text = self.Value..(optionsettings.Suffix and ' '..(type(optionsettings.Suffix) == 'function' and optionsettings.Suffix(self.Value) or optionsettings.Suffix) or '')
 	if check or final then
