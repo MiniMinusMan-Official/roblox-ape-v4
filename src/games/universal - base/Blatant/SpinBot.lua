@@ -125,29 +125,49 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 							end
 						end
 						lastPitchUpdate_Value = pitch
-						if VisualGhost and entitylib.character and entitylib.character.Character then
+						if VisualGhost and entitylib.character.Character then
 							local realChar = entitylib.character.Character
-							local ghostRoot = VisualGhost:FindFirstChild("HumanoidRootPart")
-							local realRoot = realChar:FindFirstChild("HumanoidRootPart")
+							local ghostRoot = VisualGhost:FindFirstChild('HumanoidRootPart')
+							local realRoot = realChar:FindFirstChild('HumanoidRootPart')
 
 							if ghostRoot and realRoot then
-								ghostRoot.CFrame = CFrame.new(realRoot.Position) * CFrame.Angles(0, fakeYaw, 0)
-								for _, realMotor in ipairs(realChar:GetDescendants()) do
-									if realMotor:IsA("Motor6D") then
-										local ghostMotor = VisualGhost:FindFirstChild(realMotor.Name, true)
-										if ghostMotor and ghostMotor:IsA("Motor6D") then
+								ghostRoot.CFrame = CFrame.new(realRoot.Position)
+									* CFrame.Angles(0, fakeYaw, 0)
+
+								for _, realMotor in realChar:GetDescendants() do
+									if realMotor:IsA('Motor6D') then
+										local ghostMotor = VisualGhost:FindFirstChild(
+											realMotor.Name,
+											true
+										)
+
+										if ghostMotor and ghostMotor:IsA('Motor6D') then
 											ghostMotor.C0 = realMotor.C0
 											ghostMotor.C1 = realMotor.C1
 											ghostMotor.Transform = realMotor.Transform
 										end
 									end
 								end
-								local lowerTorso = VisualGhost:FindFirstChild("LowerTorso")
-								if lowerTorso then
-									local bendJoint = lowerTorso:FindFirstChild("Waist") or lowerTorso:FindFirstChild("Root") or ghostRoot:FindFirstChild("Root")
-									if bendJoint and bendJoint:IsA("Motor6D") then
-										bendJoint.C0 = bendJoint.C0 * CFrame.Angles(math.rad(pitch), 0, 0)
-									end
+
+								-- R15: bends the upper body and equipped gun.
+								local ghostJoint = VisualGhost:FindFirstChild('Waist', true)
+								local realJoint = realChar:FindFirstChild('Waist', true)
+
+								-- R6/fallback: pitches the entire torso.
+								if not ghostJoint then
+									ghostJoint = VisualGhost:FindFirstChild('RootJoint', true)
+									realJoint = realChar:FindFirstChild('RootJoint', true)
+										or realChar:FindFirstChild('Root', true)
+								end
+
+								if ghostJoint and ghostJoint:IsA('Motor6D') then
+									local originalTransform = realJoint
+										and realJoint:IsA('Motor6D')
+										and realJoint.Transform
+										or CFrame.identity
+
+									ghostJoint.Transform = originalTransform
+										* CFrame.Angles(math.rad(pitch), 0, 0)
 								end
 							end
 						end
