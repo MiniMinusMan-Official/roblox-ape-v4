@@ -494,7 +494,7 @@ mainapi.Components = setmetatable(components, {
 		if mainapi.Legit then
 			for _, v in mainapi.Legit.Modules do
 				rawset(v, 'Create'..ind, function(_, settings)
-					return func(settings, v.Children, v)
+					return func(settings, v.SettingsChildren or v.Children, v)
 				end)
 			end
 		end
@@ -553,6 +553,12 @@ local categoryIcons = {
 }
 local categoryCount = 0
 local overlayCount = 0
+local legitHudYOffset = 120
+local hiddenLegitPreviews = {
+	FPS = true,
+	Keystrokes = true,
+	Speedmeter = true
+}
 
 local function setCategoryNavColor(category, colorValue)
 	if category.NavLabel then category.NavLabel.TextColor3 = colorValue end
@@ -752,6 +758,76 @@ function mainapi:CreateCategory(categorysettings)
 		modulelist.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		modulelist.Parent = modulechildren
 		moduleapi.Children = modulechildren
+		local hudchildren
+		if categorysettings.Legit and modulesettings.Size then
+			hudchildren = Instance.new('Frame')
+			hudchildren.Name = modulesettings.Name..'HUD'
+			hudchildren.Size = modulesettings.Size
+			hudchildren.Position = UDim2.fromOffset(12, legitHudYOffset)
+			legitHudYOffset += math.max(modulesettings.Size.Y.Offset + 10, 52)
+			hudchildren.BackgroundTransparency = 1
+			hudchildren.BorderSizePixel = 0
+			hudchildren.Active = true
+			hudchildren.Visible = false
+			hudchildren.Parent = scaledgui
+			makeDraggable(hudchildren)
+			moduleapi.OriginalChildren = modulechildren
+			moduleapi.SettingsChildren = modulechildren
+			moduleapi.HudChildren = hudchildren
+			moduleapi.Children = hudchildren
+
+			if not hiddenLegitPreviews[modulesettings.Name] then
+				local previewHeight = math.max(53, modulesettings.Size.Y.Offset + 12)
+				local previewholder = Instance.new('Frame')
+				previewholder.Name = 'HUDPreview'
+				previewholder.Size = UDim2.new(1, 0, 0, previewHeight)
+				previewholder.BackgroundColor3 = Color3.fromRGB(0, 2, 6)
+				previewholder.BorderSizePixel = 0
+				previewholder.ClipsDescendants = true
+				previewholder.LayoutOrder = 100000
+				previewholder.Parent = modulechildren
+				addCorner(previewholder, UDim.new(0, 3))
+				local previewcanvas = Instance.new('Frame')
+				previewcanvas.Name = 'PreviewCanvas'
+				previewcanvas.Size = modulesettings.Size
+				previewcanvas.AnchorPoint = Vector2.new(0.5, 0.5)
+				previewcanvas.Position = UDim2.fromScale(0.5, 0.5)
+				previewcanvas.BackgroundTransparency = 1
+				previewcanvas.Parent = previewholder
+				local previewQueued = false
+				local function refreshPreview()
+					if previewQueued then return end
+					previewQueued = true
+					task.defer(function()
+						if not previewcanvas.Parent then
+							previewQueued = false
+							return
+						end
+						previewcanvas:ClearAllChildren()
+						for _, child in hudchildren:GetChildren() do
+							local success, clone = pcall(function() return child:Clone() end)
+							if success and clone then clone.Parent = previewcanvas end
+						end
+						previewQueued = false
+					end)
+				end
+				local function watchPreviewObject(object)
+					if not object:IsA('GuiObject') then return end
+					mainapi:Clean(object.Changed:Connect(function(property)
+						if property ~= 'AbsolutePosition' and property ~= 'AbsoluteSize' and property ~= 'AbsoluteRotation' then
+							refreshPreview()
+						end
+					end))
+				end
+				mainapi:Clean(hudchildren.DescendantAdded:Connect(function(object)
+					watchPreviewObject(object)
+					refreshPreview()
+				end))
+				mainapi:Clean(hudchildren.DescendantRemoving:Connect(refreshPreview))
+				for _, object in hudchildren:GetDescendants() do watchPreviewObject(object) end
+				refreshPreview()
+			end
+		end
 		modulesettings.Function = modulesettings.Function or function() end
 		addMaid(moduleapi)
 		local moduleLayoutQueued = false
@@ -759,13 +835,17 @@ function mainapi:CreateCategory(categorysettings)
 			if moduleLayoutQueued then return end
 			moduleLayoutQueued = true
 			task.defer(function()
-				moduleLayoutQueued = false
-				if not modulechildren.Parent then return end
+				if not modulechildren.Parent then
+					moduleLayoutQueued = false
+					return
+				end
 				if mainapi.ThreadFix then setthreadidentity(8) end
 				local targetHeight = math.max(0, modulelist.AbsoluteContentSize.Y / scale.Scale)
-				modulechildren.Size = UDim2.new(1, 0, 0, targetHeight)
-				settingsaccent.Size = UDim2.fromOffset(2, targetHeight)
-				resizeCategory(true)
+				if math.abs(modulechildren.Size.Y.Offset - targetHeight) > 0.5 then
+					modulechildren.Size = UDim2.new(1, 0, 0, targetHeight)
+					settingsaccent.Size = UDim2.fromOffset(2, targetHeight)
+				end
+				moduleLayoutQueued = false
 			end)
 		end
 		function moduleapi:UpdateLayout()
@@ -776,6 +856,7 @@ function mainapi:CreateCategory(categorysettings)
 		function moduleapi:Toggle(multiple)
 			if mainapi.ThreadFix then setthreadidentity(8) end
 			self.Enabled = not self.Enabled
+			if hudchildren then hudchildren.Visible = self.Enabled end
 			tween:Tween(modulebutton, uipallet.Tween, {
 				TextColor3 = self.Enabled and uipallet.Main or (hovered and Color3.new(1, 1, 1) or Color3.fromRGB(197, 201, 209))
 			}, tween.tweenstwo)
@@ -1097,6 +1178,9 @@ function mainapi:Load(skipgui, profile)
 		for name, saved in (savedata.Legit or {}) do
 			local object = self.Legit and self.Legit.Modules and self.Legit.Modules[name]
 			if object then
+				if saved.Position and object.HudChildren then
+					object.HudChildren.Position = UDim2.fromOffset(saved.Position.X or 0, saved.Position.Y or 0)
+				end
 				if saved.Options then self:LoadOptions(object, saved.Options) end
 				if object.SetBind then object:SetBind(type(saved.Bind) == 'table' and saved.Bind or {}) end
 				if saved.Enabled ~= nil and saved.Enabled ~= object.Enabled then object:Toggle(true) end
@@ -1181,6 +1265,10 @@ function mainapi:Save(newprofile)
 			savedata.Legit[name] = {
 				Enabled = object.Enabled,
 				Bind = object.Bind,
+				Position = object.HudChildren and {
+					X = object.HudChildren.Position.X.Offset,
+					Y = object.HudChildren.Position.Y.Offset
+				} or nil,
 				Options = self:SaveOptions(object, true)
 			}
 		end
@@ -1384,36 +1472,54 @@ function mainapi:UpdateBinds(afterload)
 	end)
 
 	local width = 144
+	local maxKeyWidth = 0
 	for _, data in binds do
 		local keyText = '['..formatBind(data.Bind)..']'
-		width = math.max(width, math.ceil(getfontsize(data.Name, 12, uipallet.Font).X + getfontsize(keyText, 11, uipallet.Font).X + 30))
+		local keyWidth = math.ceil(getfontsize(keyText, 11, uipallet.Font).X)
+		maxKeyWidth = math.max(maxKeyWidth, keyWidth)
+		width = math.max(width, math.ceil(getfontsize(data.Name, 12, uipallet.Font).X + keyWidth + 30))
 	end
 	for index, data in binds do
 		local row = Instance.new('Frame')
 		row.Name = 'BindRow'
 		row.Size = UDim2.fromOffset(width, 18)
 		row.Position = UDim2.fromOffset(0, 25 + ((index - 1) * 18))
-		row.BackgroundTransparency = 1
+		row.BackgroundColor3 = Color3.fromRGB(4, 8, 15)
+		row.BackgroundTransparency = index % 2 == 0 and 0.18 or 0.35
+		row.BorderSizePixel = 0
+		row.ZIndex = 7
 		row.Parent = bindsholder
+		local active = Instance.new('Frame')
+		active.Name = 'Accent'
+		active.Size = UDim2.new(0, 2, 1, 0)
+		active.BackgroundColor3 = uipallet.Main
+		active.BackgroundTransparency = data.Enabled and 0 or 1
+		active.BorderSizePixel = 0
+		active.ZIndex = 8
+		active.Parent = row
 		local name = Instance.new('TextLabel')
-		name.Size = UDim2.new(0.64, -8, 1, 0)
+		name.Size = UDim2.new(1, -(maxKeyWidth + 24), 1, 0)
 		name.Position = UDim2.fromOffset(8, 0)
 		name.BackgroundTransparency = 1
 		name.Text = data.Name
 		name.TextXAlignment = Enum.TextXAlignment.Left
-		name.TextColor3 = data.Enabled and uipallet.Main or Color3.fromRGB(229, 232, 239)
+		name.TextColor3 = Color3.new(1, 1, 1)
+		name.TextTransparency = 0
 		name.TextSize = 12
 		name.FontFace = uipallet.Font
+		name.ZIndex = 8
 		name.Parent = row
 		local key = Instance.new('TextLabel')
-		key.Size = UDim2.new(0.36, -8, 1, 0)
-		key.Position = UDim2.new(0.64, 0, 0, 0)
+		key.Size = UDim2.fromOffset(maxKeyWidth, 18)
+		key.Position = UDim2.new(1, -(maxKeyWidth + 8), 0, 0)
 		key.BackgroundTransparency = 1
 		key.Text = '['..formatBind(data.Bind)..']'
 		key.TextXAlignment = Enum.TextXAlignment.Right
-		key.TextColor3 = Color3.fromRGB(143, 148, 158)
+		key.TextColor3 = Color3.fromRGB(196, 201, 211)
+		key.TextTransparency = 0
 		key.TextSize = 11
 		key.FontFace = uipallet.Font
+		key.ZIndex = 8
 		key.Parent = row
 	end
 	bindsholder.Size = UDim2.fromOffset(width, 30 + (#binds * 18))
@@ -1945,7 +2051,7 @@ bindsholder.Name = 'LiquidBounceBinds'
 bindsholder.Size = UDim2.fromOffset(144, 30)
 bindsholder.Position = UDim2.fromOffset(152, 8)
 bindsholder.BackgroundColor3 = Color3.fromRGB(2, 5, 10)
-bindsholder.BackgroundTransparency = 0.08
+bindsholder.BackgroundTransparency = 0.01
 bindsholder.BorderSizePixel = 0
 bindsholder.Active = true
 bindsholder.ClipsDescendants = true
@@ -1967,8 +2073,10 @@ bindsheader.BorderSizePixel = 0
 bindsheader.Text = '  Binds'
 bindsheader.TextXAlignment = Enum.TextXAlignment.Left
 bindsheader.TextColor3 = Color3.fromRGB(239, 241, 246)
+bindsheader.TextTransparency = 0
 bindsheader.TextSize = 13
 bindsheader.FontFace = uipallet.FontSemiBold
+bindsheader.ZIndex = 8
 bindsheader.Parent = bindsholder
 local bindsicon = Instance.new('TextLabel')
 bindsicon.Size = UDim2.fromOffset(24, 25)
@@ -1976,8 +2084,10 @@ bindsicon.Position = UDim2.new(1, -27, 0, 0)
 bindsicon.BackgroundTransparency = 1
 bindsicon.Text = '⌨'
 bindsicon.TextColor3 = Color3.fromRGB(178, 183, 193)
+bindsicon.TextTransparency = 0
 bindsicon.TextSize = 12
 bindsicon.FontFace = uipallet.Font
+bindsicon.ZIndex = 9
 bindsicon.Parent = bindsholder
 makeDraggable(bindsholder)
 textgui = render:CreateModule({
