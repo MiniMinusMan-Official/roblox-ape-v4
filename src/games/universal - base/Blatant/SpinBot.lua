@@ -35,21 +35,19 @@ end
 
 local function createGhost(charModel)
 	destroyGhost()
-
 	if not charModel then return end
-
 	charModel.Archivable = true
 	VisualGhost = charModel:Clone()
 	charModel.Archivable = false
-
 	VisualGhost.Name = "AntiAimVisualGhost"
-
 	local ghostHumanoid = VisualGhost:FindFirstChildOfClass("Humanoid")
-	if ghostHumanoid then
-		ghostHumanoid:Destroy()
-	end
-
+	if ghostHumanoid then ghostHumanoid:Destroy() end
 	local GHOST_COLOR = Color3.fromRGB(5, 133, 104)
+	for _, child in ipairs(VisualGhost:GetChildren()) do
+		if child:IsA("Accessory") or child:IsA("Accoutrement") then
+			child:Destroy()
+		end
+	end
 	for _, child in ipairs(VisualGhost:GetDescendants()) do
 		if child:IsA("BasePart") then
 			child.CanCollide = false
@@ -79,7 +77,6 @@ local function createGhost(charModel)
 	highlight.OutlineColor = Color3.fromRGB(0, 255, 128)
 	highlight.OutlineTransparency = 0
 	highlight.Parent = VisualGhost
-
 	VisualGhost.Parent = workspace
 end
 
@@ -101,20 +98,14 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 				if entitylib.isAlive then
 					local humanoid = entitylib.character.Humanoid
 					local root = entitylib.character.RootPart
-
 					humanoid.AutoRotate = false
-
 					SpinAngle = (SpinAngle + math.rad(20 * Value.Value) * delta) % (math.pi * 2)
-
 					local x, y, z = root.CFrame:ToOrientation()
 					local fakeYaw = YToggle.Enabled and SpinAngle or y
-
 					root.CFrame = CFrame.new(root.Position) * CFrame.Angles(XToggle.Enabled and SpinAngle or x, fakeYaw, ZToggle.Enabled and SpinAngle or z)
-
 					if inSCPRP and AntiAim.Enabled then
 						local pitch = 0
 						local currentTime = tick()
-
 						if AntiAimMode.Value == 'Static' then
 							pitch = AntiAimPitch.Value
 						elseif AntiAimMode.Value == 'Random' then
@@ -134,33 +125,38 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 							end
 						end
 						lastPitchUpdate_Value = pitch
-						if VisualGhost then
+						if VisualGhost and entitylib.character and entitylib.character.Character then
+							local realChar = entitylib.character.Character
 							local ghostRoot = VisualGhost:FindFirstChild("HumanoidRootPart")
-							if ghostRoot then
-								local pitchRad = math.rad(pitch)
-								ghostRoot.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, fakeYaw, 0)
+							local realRoot = realChar:FindFirstChild("HumanoidRootPart")
+
+							if ghostRoot and realRoot then
+								ghostRoot.CFrame = CFrame.new(realRoot.Position) * CFrame.Angles(0, fakeYaw, 0)
+								for _, realMotor in ipairs(realChar:GetDescendants()) do
+									if realMotor:IsA("Motor6D") then
+										local ghostMotor = VisualGhost:FindFirstChild(realMotor.Name, true)
+										if ghostMotor and ghostMotor:IsA("Motor6D") then
+											ghostMotor.C0 = realMotor.C0
+											ghostMotor.C1 = realMotor.C1
+											ghostMotor.Transform = realMotor.Transform
+										end
+									end
+								end
 								local lowerTorso = VisualGhost:FindFirstChild("LowerTorso")
 								if lowerTorso then
-									local waistJoint = lowerTorso:FindFirstChild("Waist")
-									if waistJoint and waistJoint:IsA("Motor6D") then
-										waistJoint.C0 = CFrame.new(waistJoint.C0.Position) * CFrame.Angles(pitchRad, 0, 0)
-									else
-										local rootJoint = lowerTorso:FindFirstChild("Root") or ghostRoot:FindFirstChild("Root")
-										if rootJoint and rootJoint:IsA("Motor6D") then
-											rootJoint.C0 = CFrame.new(rootJoint.C0.Position) * CFrame.Angles(pitchRad, 0, 0)
-										end
+									local bendJoint = lowerTorso:FindFirstChild("Waist") or lowerTorso:FindFirstChild("Root") or ghostRoot:FindFirstChild("Root")
+									if bendJoint and bendJoint:IsA("Motor6D") then
+										bendJoint.C0 = bendJoint.C0 * CFrame.Angles(math.rad(pitch), 0, 0)
 									end
 								end
 							end
 						end
-
 						local bytes = { 2, 0, 0 }
 						if pitch < 0 then
 							bytes[1], bytes[2], bytes[3] = 2, 1, 255 + pitch
 						else
 							bytes[1], bytes[2], bytes[3] = 2, 0, pitch
 						end
-
 						UpdateReplication:FireServer((function(b_vals)
 							local b = buffer.create(#b_vals)
 							for i = 1, #b_vals do buffer.writeu8(b, i - 1, b_vals[i]) end
