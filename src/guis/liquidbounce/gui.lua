@@ -1,9 +1,11 @@
+local liquidAccent = Color3.fromRGB(70, 119, 255)
+local liquidHue, liquidSat, liquidValue = liquidAccent:ToHSV()
 local mainapi = {
 	Categories = {},
 	GUIColor = {
-		Hue = 0.46,
-		Sat = 0.96,
-		Value = 0.52
+		Hue = liquidHue,
+		Sat = liquidSat,
+		Value = liquidValue
 	},
 	HeldKeybinds = {},
 	Keybind = {'RightShift'},
@@ -54,6 +56,8 @@ local searchresults
 local textgui
 local textguiholder
 local textguilogo
+local bindsmodule
+local bindsholder
 local scale
 local gui
 
@@ -63,12 +67,12 @@ local tween = {
 	tweenstwo = {}
 }
 local uipallet = {
-	Main = Color3.fromRGB(70, 119, 255),
+	Main = liquidAccent,
 	Text = Color3.new(1, 1, 1),
 	Panel = Color3.fromRGB(3, 6, 12),
 	PanelLight = Color3.fromRGB(8, 12, 19),
 	Muted = Color3.fromRGB(143, 148, 158),
-	Tween = TweenInfo.new(0.16, Enum.EasingStyle.Linear),
+	Tween = TweenInfo.new(0.08, Enum.EasingStyle.Linear),
 }
 
 local getcustomassets = {
@@ -354,14 +358,14 @@ do
 
 	local res = isfile('newvape/profiles/color.txt') and loadJson('newvape/profiles/color.txt')
 	if res then
-		uipallet.Main = res.Main and Color3.fromRGB(unpack(res.Main)) or uipallet.Main
-		uipallet.Text = res.Text and Color3.fromRGB(unpack(res.Text)) or uipallet.Text
 		uipallet.Font = res.Font and Font.new(
 			res.Font:find('rbxasset') and res.Font or string.format('rbxasset://fonts/families/%s.json', res.Font)
 		) or uipallet.Font
 		uipallet.FontSemiBold = Font.new(uipallet.Font.Family, Enum.FontWeight.SemiBold)
 		uipallet.FontLight = Font.new(uipallet.Font.Family, Enum.FontWeight.Light)
 	end
+	uipallet.Main = liquidAccent
+	uipallet.Text = Color3.new(1, 1, 1)
 
 	fontsize.Font = uipallet.Font
 end
@@ -548,9 +552,10 @@ local categoryIcons = {
 	World = 'newvape/assets/liquidbounce/world.png'
 }
 local categoryCount = 0
+local overlayCount = 0
 
 local function setCategoryNavColor(category, colorValue)
-	if category.NavButton then category.NavButton.TextColor3 = colorValue end
+	if category.NavLabel then category.NavLabel.TextColor3 = colorValue end
 	if category.NavIcon then
 		if category.NavIcon:IsA('ImageLabel') then
 			category.NavIcon.ImageColor3 = colorValue
@@ -783,7 +788,10 @@ function mainapi:CreateCategory(categorysettings)
 				end
 				table.clear(self.Connections)
 			end
-			if not multiple then mainapi:UpdateTextGUI() end
+			if not multiple then
+				mainapi:UpdateTextGUI()
+			end
+			mainapi:UpdateBinds()
 			task.spawn(modulesettings.Function, self.Enabled)
 		end
 
@@ -850,14 +858,14 @@ function mainapi:CreateCategory(categorysettings)
 		return moduleapi
 	end
 
-	function categoryapi:Expand(value)
+	function categoryapi:Expand(value, instant)
 		if value == nil then
 			self.Expanded = not self.Expanded
 		else
 			self.Expanded = value
 		end
 		collapse.Text = self.Expanded and '−' or '+'
-		resizeCategory()
+		resizeCategory(instant)
 	end
 
 	for name, component in components do
@@ -883,11 +891,7 @@ function mainapi:CreateCategory(categorysettings)
 		nav.Size = UDim2.new(1, 0, 0, 30)
 		nav.BackgroundTransparency = 1
 		nav.AutoButtonColor = false
-		nav.Text = '        '..displayName
-		nav.TextXAlignment = Enum.TextXAlignment.Left
-		nav.TextColor3 = Color3.fromRGB(143, 148, 158)
-		nav.TextSize = 13
-		nav.FontFace = uipallet.Font
+		nav.Text = ''
 		nav.Parent = categoryholder
 		local navicon
 		if iconPath then
@@ -909,6 +913,17 @@ function mainapi:CreateCategory(categorysettings)
 		navicon.Name = 'Icon'
 		navicon.BackgroundTransparency = 1
 		navicon.Parent = nav
+		local navlabel = Instance.new('TextLabel')
+		navlabel.Name = 'Label'
+		navlabel.Size = UDim2.new(1, -45, 1, 0)
+		navlabel.Position = UDim2.fromOffset(40, 0)
+		navlabel.BackgroundTransparency = 1
+		navlabel.Text = displayName
+		navlabel.TextXAlignment = Enum.TextXAlignment.Left
+		navlabel.TextColor3 = Color3.fromRGB(143, 148, 158)
+		navlabel.TextSize = 13
+		navlabel.FontFace = uipallet.Font
+		navlabel.Parent = nav
 		local navaccent = Instance.new('Frame')
 		navaccent.Name = 'Accent'
 		navaccent.Size = UDim2.new(0, 2, 0, 18)
@@ -919,6 +934,7 @@ function mainapi:CreateCategory(categorysettings)
 		navaccent.Parent = nav
 		categoryapi.NavButton = nav
 		categoryapi.NavIcon = navicon
+		categoryapi.NavLabel = navlabel
 		nav.MouseEnter:Connect(function() setCategoryNavColor(categoryapi, Color3.new(1, 1, 1)) end)
 		nav.MouseLeave:Connect(function()
 			setCategoryNavColor(categoryapi, lastSelected == categoryapi and uipallet.Main or Color3.fromRGB(143, 148, 158))
@@ -926,7 +942,7 @@ function mainapi:CreateCategory(categorysettings)
 		nav.MouseButton1Click:Connect(function()
 			lastSelected = categoryapi
 			window.Visible = true
-			categoryapi:Expand(true)
+			categoryapi:Expand(true, true)
 			window.Position = UDim2.fromOffset(math.max(210, (gui.AbsoluteSize.X / scale.Scale - width) / 2), 120)
 			for _, other in mainapi.Categories do
 				if other.NavButton then
@@ -941,10 +957,11 @@ function mainapi:CreateCategory(categorysettings)
 end
 
 function mainapi:CreateOverlay(categorysettings)
+	overlayCount += 1
 	local customchildren = Instance.new(categorysettings.NoDrag and 'Frame' or 'TextButton')
 	customchildren.Name = categorysettings.Name..'Overlay'
 	customchildren.Size = UDim2.fromOffset(categorysettings.WindowSize or 220, categorysettings.WindowHeight or 220)
-	customchildren.Position = categorysettings.Position or UDim2.fromOffset(240, 46)
+	customchildren.Position = categorysettings.WindowPosition or UDim2.fromOffset(12 + ((overlayCount - 1) * 230), 76)
 	customchildren.BackgroundTransparency = 1
 	customchildren.Visible = false
 	customchildren.Parent = scaledgui
@@ -1054,7 +1071,7 @@ function mainapi:Load(skipgui, profile)
 		local object = self.Categories[name]
 		if object and object.Canonical then
 			if saved.Position then object.Object.Position = UDim2.fromOffset(saved.Position.X or 0, saved.Position.Y or 0) end
-			if saved.Expanded ~= nil and object.Expand then object:Expand(saved.Expanded) end
+			if saved.Expanded ~= nil and object.Expand then object:Expand(saved.Expanded, true) end
 			if saved.Options then self:LoadOptions(object, saved.Options) end
 		end
 	end
@@ -1066,7 +1083,7 @@ function mainapi:Load(skipgui, profile)
 			local object = self.Categories[name]
 			if object and object.Canonical then
 				if saved.Position then object.Object.Position = UDim2.fromOffset(saved.Position.X or 0, saved.Position.Y or 0) end
-				if saved.Expanded ~= nil and object.Expand then object:Expand(saved.Expanded) end
+				if saved.Expanded ~= nil and object.Expand then object:Expand(saved.Expanded, true) end
 			end
 		end
 		for name, saved in (savedata.Modules or {}) do
@@ -1099,6 +1116,7 @@ function mainapi:Load(skipgui, profile)
 		self.Downloader = nil
 	end
 	self:UpdateTextGUI(true)
+	self:UpdateBinds(true)
 end
 
 function mainapi:LoadOptions(object, savedoptions)
@@ -1207,13 +1225,27 @@ function mainapi:Uninject()
 	shared.vapereload = nil
 end
 
-function mainapi:UpdateGUI(hue, sat, val, default)
+function mainapi:Reinject(guiTheme)
+	self:Save()
+	if guiTheme then
+		pcall(writefile, 'newvape/profiles/gui.txt', guiTheme:lower())
+	end
+	shared.vapereload = true
+	if shared.VapeDeveloper then
+		loadstring(readfile('newvape/loader.lua'), 'loader')()
+	else
+		loadstring(game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/loader.lua', true), 'loader')()
+	end
+end
+
+function mainapi:UpdateGUI(_, _, _, default)
 	if self.Loaded == nil then return end
-	hue = hue or self.GUIColor.Hue or 0.62
-	sat = sat or self.GUIColor.Sat or 0.72
-	val = val or self.GUIColor.Value or 1
+	local hue, sat, val = liquidHue, liquidSat, liquidValue
+	self.GUIColor.Hue = hue
+	self.GUIColor.Sat = sat
+	self.GUIColor.Value = val
 	local oldAccent = uipallet.Main
-	local newAccent = Color3.fromHSV(hue, sat, val)
+	local newAccent = liquidAccent
 	uipallet.Main = newAccent
 	for _, object in gui:GetDescendants() do
 		if object:IsA('GuiObject') then
@@ -1254,17 +1286,18 @@ function mainapi:UpdateTextGUI(afterload)
 	if not afterload and self.Loaded ~= true then return end
 	if not textgui or not textguiholder then return end
 	textguiholder.Visible = textgui.Enabled
+	if textguilogo then
+		textguilogo.Visible = textgui.Enabled
+			and (not textgui.WatermarkOption or textgui.WatermarkOption.Enabled)
+			and not clickgui.Visible
+	end
 	if not textgui.Enabled then return end
 	for _, child in textguiholder:GetChildren() do
-		if not child:IsA('UIListLayout') and child ~= textguilogo then child:Destroy() end
-	end
-	if textguilogo then
-		textguilogo.Visible = not textgui.WatermarkOption or textgui.WatermarkOption.Enabled
-		textguilogo.LayoutOrder = 0
+		if not child:IsA('UIListLayout') then child:Destroy() end
 	end
 	local active = {}
 	for name, module in self.Modules do
-		if module.Enabled and module ~= textgui then table.insert(active, {Name = name, Module = module}) end
+		if module.Enabled and module ~= textgui and module ~= bindsmodule then table.insert(active, {Name = name, Module = module}) end
 	end
 	if self.Legit and self.Legit.Modules then
 		for name, module in self.Legit.Modules do
@@ -1285,28 +1318,105 @@ function mainapi:UpdateTextGUI(afterload)
 			local success, result = pcall(data.Module.ExtraText)
 			if success and result ~= nil and tostring(result) ~= '' then extra = tostring(result) end
 		end
+		local displayText = name..(extra and ' '..extra or '')
 		local label = Instance.new('TextLabel')
 		label.Name = data.Name
-		label.Size = UDim2.fromOffset(math.max(92, getfontsize(name..(extra and ' '..extra or ''), 14, uipallet.Font).X + 15), 22)
+		label.Size = UDim2.fromOffset(math.ceil(getfontsize(displayText, 14, uipallet.FontSemiBold).X) + 10, 22)
 		label.BackgroundColor3 = Color3.fromRGB(2, 5, 10)
 		label.BackgroundTransparency = textgui.BackgroundOption and textgui.BackgroundOption.Enabled and 0.18 or 1
 		label.BorderSizePixel = 0
-		label.Text = '  '..name..(extra and ' '..extra or '')
+		label.ClipsDescendants = true
+		label.Text = displayText
 		label.TextXAlignment = Enum.TextXAlignment.Left
 		label.TextColor3 = Color3.fromRGB(235, 238, 244)
 		label.TextSize = 14
 		label.FontFace = uipallet.FontSemiBold
 		label.LayoutOrder = index
 		label.Parent = textguiholder
+		addCorner(label, UDim.new(0, 2))
+		local padding = Instance.new('UIPadding')
+		padding.PaddingLeft = UDim.new(0, 7)
+		padding.PaddingRight = UDim.new(0, 3)
+		padding.Parent = label
 		local line = Instance.new('ImageLabel')
 		line.Name = 'Accent'
 		line.Size = UDim2.new(0, 4, 1, 0)
 		line.BackgroundTransparency = 1
 		line.Image = getcustomasset('newvape/assets/liquidbounce/textgui.png')
 		line.ScaleType = Enum.ScaleType.Stretch
-		line.ImageColor3 = uipallet.Main
+		line.ImageColor3 = Color3.new(1, 1, 1)
 		line.Parent = label
 	end
+end
+
+local function formatBind(bind)
+	local formatted = {}
+	for _, key in bind do
+		key = tostring(key):gsub('(%l)(%u)', '%1 %2')
+		table.insert(formatted, key)
+	end
+	return table.concat(formatted, ' + ')
+end
+
+function mainapi:UpdateBinds(afterload)
+	if not afterload and self.Loaded ~= true then return end
+	if not bindsmodule or not bindsholder then return end
+	bindsholder.Visible = bindsmodule.Enabled
+	if not bindsmodule.Enabled then return end
+	for _, child in bindsholder:GetChildren() do
+		if child.Name == 'BindRow' then child:Destroy() end
+	end
+
+	local binds = {{Name = 'Click GUI', Bind = self.Keybind, Enabled = clickgui.Visible}}
+	local function addBinds(modules)
+		for name, module in modules do
+			if module ~= bindsmodule and type(module.Bind) == 'table' and #module.Bind > 0 then
+				table.insert(binds, {Name = name, Bind = module.Bind, Enabled = module.Enabled})
+			end
+		end
+	end
+	addBinds(self.Modules)
+	if self.Legit and self.Legit.Modules then addBinds(self.Legit.Modules) end
+	table.sort(binds, function(a, b)
+		if a.Name == 'Click GUI' then return true end
+		if b.Name == 'Click GUI' then return false end
+		return a.Name:lower() < b.Name:lower()
+	end)
+
+	local width = 144
+	for _, data in binds do
+		local keyText = '['..formatBind(data.Bind)..']'
+		width = math.max(width, math.ceil(getfontsize(data.Name, 12, uipallet.Font).X + getfontsize(keyText, 11, uipallet.Font).X + 30))
+	end
+	for index, data in binds do
+		local row = Instance.new('Frame')
+		row.Name = 'BindRow'
+		row.Size = UDim2.fromOffset(width, 18)
+		row.Position = UDim2.fromOffset(0, 25 + ((index - 1) * 18))
+		row.BackgroundTransparency = 1
+		row.Parent = bindsholder
+		local name = Instance.new('TextLabel')
+		name.Size = UDim2.new(0.64, -8, 1, 0)
+		name.Position = UDim2.fromOffset(8, 0)
+		name.BackgroundTransparency = 1
+		name.Text = data.Name
+		name.TextXAlignment = Enum.TextXAlignment.Left
+		name.TextColor3 = data.Enabled and uipallet.Main or Color3.fromRGB(229, 232, 239)
+		name.TextSize = 12
+		name.FontFace = uipallet.Font
+		name.Parent = row
+		local key = Instance.new('TextLabel')
+		key.Size = UDim2.new(0.36, -8, 1, 0)
+		key.Position = UDim2.new(0.64, 0, 0, 0)
+		key.BackgroundTransparency = 1
+		key.Text = '['..formatBind(data.Bind)..']'
+		key.TextXAlignment = Enum.TextXAlignment.Right
+		key.TextColor3 = Color3.fromRGB(143, 148, 158)
+		key.TextSize = 11
+		key.FontFace = uipallet.Font
+		key.Parent = row
+	end
+	bindsholder.Size = UDim2.fromOffset(width, 30 + (#binds * 18))
 end
 
 gui = Instance.new('ScreenGui')
@@ -1373,6 +1483,8 @@ end))
 
 mainapi:Clean(clickgui:GetPropertyChangedSignal('Visible'):Connect(function()
 	mainapi:UpdateGUI(mainapi.GUIColor.Hue, mainapi.GUIColor.Sat, mainapi.GUIColor.Value, true)
+	mainapi:UpdateTextGUI(true)
+	mainapi:UpdateBinds(true)
 	if clickgui.Visible and inputService.MouseEnabled then
 		repeat
 			local visibleCheck = clickgui.Visible
@@ -1561,7 +1673,7 @@ local function refreshSearch()
 		result.MouseButton1Click:Connect(function()
 			if module.CategoryObject then
 				module.CategoryObject.Object.Visible = true
-				module.CategoryObject:Expand(true)
+				module.CategoryObject:Expand(true, true)
 				module.CategoryObject.Object.Position = UDim2.new(0.5, -101, 0, 118)
 				module:SetExpanded(true)
 			end
@@ -1630,6 +1742,7 @@ function guibind:SetBind(keys, mouse)
 	self.Bind = #keys > 0 and table.clone(keys) or {'RightShift'}
 	mainapi.Keybind = table.clone(self.Bind)
 	guibindlabel.Text = 'GUI Bind: '..table.concat(self.Bind, ' + ')
+	mainapi:UpdateBinds()
 end
 guibindrow.MouseButton1Click:Connect(function()
 	guibindlabel.Text = 'Press any key'
@@ -1673,16 +1786,18 @@ mainapi.Scale = clientsettings:CreateToggle({
 		scale.Scale = enabled and math.max(gui.AbsoluteSize.X / 1920, 0.65) or 1
 	end
 })
-mainapi.RainbowMode = clientsettings:CreateDropdown({Name = 'Rainbow mode', List = {'Normal', 'Gradient', 'Retro'}})
-mainapi.RainbowSpeed = clientsettings:CreateSlider({Name = 'Rainbow speed', Min = 1, Max = 10, Default = 1})
-mainapi.RainbowUpdateSpeed = clientsettings:CreateSlider({Name = 'Rainbow update', Min = 10, Max = 120, Default = 60})
-mainapi.GUIColor = clientsettings:CreateColorSlider({
-	Name = 'Accent color',
-	DefaultHue = mainapi.GUIColor.Hue,
-	DefaultSat = mainapi.GUIColor.Sat,
-	DefaultValue = mainapi.GUIColor.Value,
-	Function = function(hue, sat, value)
-		mainapi:UpdateGUI(hue, sat, value)
+clientsettings:CreateDivider('Interface')
+clientsettings:CreateDropdown({
+	Name = 'GUI Theme',
+	List = {'LiquidBounce', 'New', 'Old', 'Rise'},
+	Function = function(value, mouse)
+		if mouse then mainapi:Reinject(value) end
+	end
+})
+clientsettings:CreateButton({
+	Name = 'Reinject',
+	Function = function()
+		mainapi:Reinject()
 	end
 })
 
@@ -1802,12 +1917,12 @@ mainapi.Categories.Profiles = profiles
 
 textguiholder = Instance.new('Frame')
 textguiholder.Name = 'LiquidBounceTextGUI'
-textguiholder.Size = UDim2.fromOffset(260, 500)
-textguiholder.Position = UDim2.new(1, -278, 0, 18)
+textguiholder.Size = UDim2.fromOffset(300, 500)
+textguiholder.AnchorPoint = Vector2.new(1, 0)
+textguiholder.Position = UDim2.new(1, -12, 0, 8)
 textguiholder.BackgroundTransparency = 1
 textguiholder.Visible = false
 textguiholder.Parent = scaledgui
-makeDraggable(textguiholder, textguiholder)
 local textguilayout = Instance.new('UIListLayout')
 textguilayout.Name = 'Layout'
 textguilayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
@@ -1817,11 +1932,54 @@ textguilayout.Parent = textguiholder
 textguilogo = Instance.new('ImageLabel')
 textguilogo.Name = 'Watermark'
 textguilogo.Size = UDim2.fromOffset(132, 50)
+textguilogo.Position = UDim2.fromOffset(12, 8)
 textguilogo.BackgroundTransparency = 1
 textguilogo.Image = getcustomasset('newvape/assets/liquidbounce/logo.png')
 textguilogo.ScaleType = Enum.ScaleType.Fit
-textguilogo.LayoutOrder = 0
-textguilogo.Parent = textguiholder
+textguilogo.Visible = false
+textguilogo.ZIndex = 5
+textguilogo.Parent = scaledgui
+
+bindsholder = Instance.new('Frame')
+bindsholder.Name = 'LiquidBounceBinds'
+bindsholder.Size = UDim2.fromOffset(144, 30)
+bindsholder.Position = UDim2.fromOffset(152, 8)
+bindsholder.BackgroundColor3 = Color3.fromRGB(2, 5, 10)
+bindsholder.BackgroundTransparency = 0.08
+bindsholder.BorderSizePixel = 0
+bindsholder.Active = true
+bindsholder.ClipsDescendants = true
+bindsholder.Visible = false
+bindsholder.ZIndex = 5
+bindsholder.Parent = scaledgui
+addCorner(bindsholder, UDim.new(0, 3))
+local bindsstroke = Instance.new('UIStroke')
+bindsstroke.Color = Color3.fromRGB(24, 31, 43)
+bindsstroke.Transparency = 0.2
+bindsstroke.Thickness = 1
+bindsstroke.Parent = bindsholder
+local bindsheader = Instance.new('TextLabel')
+bindsheader.Name = 'Header'
+bindsheader.Size = UDim2.new(1, 0, 0, 25)
+bindsheader.BackgroundColor3 = Color3.fromRGB(4, 7, 13)
+bindsheader.BackgroundTransparency = 0.02
+bindsheader.BorderSizePixel = 0
+bindsheader.Text = '  Binds'
+bindsheader.TextXAlignment = Enum.TextXAlignment.Left
+bindsheader.TextColor3 = Color3.fromRGB(239, 241, 246)
+bindsheader.TextSize = 13
+bindsheader.FontFace = uipallet.FontSemiBold
+bindsheader.Parent = bindsholder
+local bindsicon = Instance.new('TextLabel')
+bindsicon.Size = UDim2.fromOffset(24, 25)
+bindsicon.Position = UDim2.new(1, -27, 0, 0)
+bindsicon.BackgroundTransparency = 1
+bindsicon.Text = '⌨'
+bindsicon.TextColor3 = Color3.fromRGB(178, 183, 193)
+bindsicon.TextSize = 12
+bindsicon.FontFace = uipallet.Font
+bindsicon.Parent = bindsholder
+makeDraggable(bindsholder)
 textgui = render:CreateModule({
 	Name = 'Text GUI',
 	Function = function() mainapi:UpdateTextGUI(true) end
@@ -1831,6 +1989,11 @@ textgui.BackgroundOption = textgui:CreateToggle({Name = 'Background', Default = 
 textgui.LowercaseOption = textgui:CreateToggle({Name = 'Lowercase', Function = function() mainapi:UpdateTextGUI(true) end})
 textgui.SortOption = textgui:CreateDropdown({Name = 'Sort', List = {'Length', 'Alphabetical'}, Function = function() mainapi:UpdateTextGUI(true) end})
 mainapi.Categories.TextGUI = textgui
+bindsmodule = render:CreateModule({
+	Name = 'Binds',
+	Function = function() mainapi:UpdateBinds(true) end
+})
+mainapi.Categories.Binds = bindsmodule
 
 local targetframe = Instance.new('Frame')
 targetframe.Name = 'LiquidBounceTargetInfo'
@@ -1988,6 +2151,7 @@ mainapi:Clean(inputService.InputBegan:Connect(function(inputObj)
 		end
 		if toggled then
 			mainapi:UpdateTextGUI()
+			mainapi:UpdateBinds()
 		end
 
 		for _, v in mainapi.Profiles do
