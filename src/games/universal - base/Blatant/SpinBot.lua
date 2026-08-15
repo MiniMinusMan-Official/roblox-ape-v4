@@ -11,15 +11,72 @@ local lastupd = 0
 local jit_tog = false
 local SpinAngle = 0
 local OldAutoRotate
-
 local UpdateReplication
+local createGhost
+local startGhostSync
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local LocalPlayer = Players.LocalPlayer
+local VisualGhost = nil
 
 local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
 
 if inSCPRP then
 	UpdateReplication = game:GetService("ReplicatedStorage").Remotes.UpdateReplication
-end
+	createGhost = function(character)
+		if VisualGhost then VisualGhost:Destroy() end
 
+		character.Archivable = true
+		VisualGhost = character:Clone()
+		character.Archivable = false
+
+		VisualGhost.Name = "aavisual"
+		for _, child in ipairs(VisualGhost:GetDescendants()) do
+			if child:IsA("BasePart") then
+				child.CanCollide = false
+				child.Anchored = true
+				child.Transparency = 0.75
+			elseif child:IsA("Script") or child:IsA("LocalScript") or child:IsA("BillboardGui") then
+				child:Destroy()
+			end
+		end
+		local highlight = Instance.new("Highlight")
+		highlight.Name = "GhostHighlight"
+		highlight.Adornee = VisualGhost
+		highlight.FillColor = Color3.fromRGB(0, 180, 0)
+		highlight.FillTransparency = 0.8
+		highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+		highlight.OutlineTransparency = 0
+		highlight.Parent = VisualGhost
+
+		VisualGhost.Parent = workspace
+		return VisualGhost
+	end
+
+	startGhostSync = function(entitylib, getFakePitch, getFakeYaw)
+		RunService:BindToRenderStep("UpdateAntiAimGhost", Enum.RenderPriority.Camera.Value + 1, function()
+			if not entitylib.isAlive or not VisualGhost then return end
+
+			local realRoot = entitylib.character.RootPart
+			local ghostRoot = VisualGhost:FindFirstChild("HumanoidRootPart")
+
+			if realRoot and ghostRoot then
+				local pitch = math.rad(getFakePitch())
+				local yaw = getFakeYaw()
+				local ghostCFrame = CFrame.new(realRoot.Position) * CFrame.Angles(0, yaw, 0)
+				VisualGhost:SetPrimaryPartCFrame(ghostCFrame)
+				local lowerTorso = VisualGhost:FindFirstChild("LowerTorso")
+				if lowerTorso then
+					local rootJoint = lowerTorso:FindFirstChild("Root")
+					if rootJoint then
+						rootJoint.C0 = CFrame.new(rootJoint.C0.Position) * CFrame.Angles(pitch, 0, 0)
+					end
+				end
+			end
+		end)
+	end
+end
 
 SpinBot = vape.Categories.Blatant:CreateModule({
 	Name = 'SpinBot',
@@ -47,6 +104,7 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 					
 					if inSCPRP then
 						if AntiAim.Enabled then
+							createGhost(entitylib.character)
 							local pitch = 0
 							local currentTime = tick()
 
@@ -88,6 +146,8 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 		else
 			if entitylib.isAlive then
 				entitylib.character.Humanoid.AutoRotate = OldAutoRotate == nil and true or OldAutoRotate
+				RunService:UnbindFromRenderStep("UpdateAntiAimGhost")
+				VisualGhost:Destroy()
 			end
 		end
 	end,
