@@ -522,12 +522,7 @@ end
 
 addMaid(mainapi)
 
-local categoryAliases = {
-	Blatant = 'Movement',
-	Utility = 'Player',
-	Inventory = 'Misc',
-	Minigames = 'Fun'
-}
+local categoryAliases = {}
 local categoryGlyphs = {
 	Combat = '⚔',
 	Blatant = '➤',
@@ -544,13 +539,12 @@ local categoryGlyphs = {
 	Legit = '◇'
 }
 local categoryIcons = {
+	Blatant = 'newvape/assets/liquidbounce/movement.png',
 	Combat = 'newvape/assets/liquidbounce/combat.png',
-	Exploit = 'newvape/assets/liquidbounce/exploit.png',
-	Fun = 'newvape/assets/liquidbounce/fun.png',
-	Misc = 'newvape/assets/liquidbounce/misc.png',
-	Movement = 'newvape/assets/liquidbounce/movement.png',
-	Player = 'newvape/assets/liquidbounce/player.png',
+	Legit = 'newvape/assets/liquidbounce/player.png',
+	Minigames = 'newvape/assets/liquidbounce/fun.png',
 	Render = 'newvape/assets/liquidbounce/render.png',
+	Utility = 'newvape/assets/liquidbounce/exploit.png',
 	World = 'newvape/assets/liquidbounce/world.png'
 }
 local categoryCount = 0
@@ -742,10 +736,12 @@ function mainapi:CreateCategory(categorysettings)
 		modulechildren.Parent = children
 		local settingsaccent = Instance.new('Frame')
 		settingsaccent.Name = 'Accent'
-		settingsaccent.Size = UDim2.new(0, 2, 1, 0)
+		settingsaccent.Size = UDim2.fromOffset(2, 0)
+		settingsaccent.Position = UDim2.fromOffset(0, 28)
 		settingsaccent.BackgroundColor3 = uipallet.Main
 		settingsaccent.BorderSizePixel = 0
-		settingsaccent.Parent = modulechildren
+		settingsaccent.Visible = false
+		settingsaccent.Parent = modulebutton
 		local modulelist = Instance.new('UIListLayout')
 		modulelist.SortOrder = Enum.SortOrder.LayoutOrder
 		modulelist.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -753,6 +749,24 @@ function mainapi:CreateCategory(categorysettings)
 		moduleapi.Children = modulechildren
 		modulesettings.Function = modulesettings.Function or function() end
 		addMaid(moduleapi)
+		local moduleLayoutQueued = false
+		local function updateModuleLayout()
+			if moduleLayoutQueued then return end
+			moduleLayoutQueued = true
+			task.defer(function()
+				moduleLayoutQueued = false
+				if not modulechildren.Parent then return end
+				if mainapi.ThreadFix then setthreadidentity(8) end
+				local targetHeight = math.max(0, modulelist.AbsoluteContentSize.Y / scale.Scale)
+				modulechildren.Size = UDim2.new(1, 0, 0, targetHeight)
+				settingsaccent.Size = UDim2.fromOffset(2, targetHeight)
+				resizeCategory(true)
+			end)
+		end
+		function moduleapi:UpdateLayout()
+			updateModuleLayout()
+		end
+		modulelist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(updateModuleLayout)
 
 		function moduleapi:Toggle(multiple)
 			if mainapi.ThreadFix then setthreadidentity(8) end
@@ -780,9 +794,10 @@ function mainapi:CreateCategory(categorysettings)
 				self.Expanded = value
 			end
 			modulechildren.Visible = self.Expanded
+			settingsaccent.Visible = self.Expanded
 			expandicon.Rotation = self.Expanded and 0 or -90
 			expandicon.ImageColor3 = self.Expanded and uipallet.Main or Color3.fromRGB(119, 125, 136)
-			resizeCategory()
+			updateModuleLayout()
 		end
 
 		for name, component in components do
@@ -815,18 +830,7 @@ function mainapi:CreateCategory(categorysettings)
 		modulebutton.MouseButton2Click:Connect(function()
 			moduleapi:SetExpanded()
 		end)
-		local updatingModuleLayout = false
-		modulelist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-			if updatingModuleLayout then return end
-			updatingModuleLayout = true
-			if mainapi.ThreadFix then setthreadidentity(8) end
-			local targetHeight = modulelist.AbsoluteContentSize.Y / scale.Scale
-			if math.abs(modulechildren.Size.Y.Offset - targetHeight) > 0.01 then
-				modulechildren.Size = UDim2.new(1, 0, 0, targetHeight)
-			end
-			resizeCategory(true)
-			updatingModuleLayout = false
-		end)
+		updateModuleLayout()
 
 		moduleapi.Object = modulebutton
 		moduleTable[modulesettings.Name] = moduleapi
@@ -837,9 +841,10 @@ function mainapi:CreateCategory(categorysettings)
 		table.sort(names)
 		for index, name in names do
 			local object = moduleTable[name]
+			local optionChildren = object.OriginalChildren or object.Children
 			object.Index = index
 			object.Object.LayoutOrder = index * 2
-			object.Children.LayoutOrder = (index * 2) + 1
+			optionChildren.LayoutOrder = (index * 2) + 1
 		end
 		if searchbox and searchbox.Text ~= '' then searchbox.Text = searchbox.Text end
 		return moduleapi
@@ -933,6 +938,36 @@ function mainapi:CreateCategory(categorysettings)
 	end
 	resizeCategory(true)
 	return categoryapi
+end
+
+function mainapi:CreateOverlay(categorysettings)
+	local customchildren = Instance.new(categorysettings.NoDrag and 'Frame' or 'TextButton')
+	customchildren.Name = categorysettings.Name..'Overlay'
+	customchildren.Size = UDim2.fromOffset(categorysettings.WindowSize or 220, categorysettings.WindowHeight or 220)
+	customchildren.Position = categorysettings.Position or UDim2.fromOffset(240, 46)
+	customchildren.BackgroundTransparency = 1
+	customchildren.Visible = false
+	customchildren.Parent = scaledgui
+	if customchildren:IsA('TextButton') then
+		customchildren.AutoButtonColor = false
+		customchildren.Text = ''
+		makeDraggable(customchildren, customchildren)
+	end
+
+	local overlay
+	overlay = self.Categories.Render:CreateModule({
+		Name = categorysettings.Name,
+		ExtraText = categorysettings.ExtraText,
+		Function = function(enabled)
+			customchildren.Visible = enabled
+			if categorysettings.Function then categorysettings.Function(enabled) end
+		end
+	})
+	overlay.OriginalChildren = overlay.Children
+	overlay.Children = customchildren
+	overlay.Button = overlay
+	overlay.Object.Name = categorysettings.Name
+	return overlay
 end
 
 function mainapi:CreateNotification(title, text, duration, type)
@@ -1081,11 +1116,13 @@ function mainapi:Remove(obj)
 			setthreadidentity(8)
 		end
 
-		for _, v in {'Object', 'Children', 'Toggle', 'Button'} do
+		local destroyed = {}
+		for _, v in {'Object', 'OriginalChildren', 'Children', 'Toggle', 'Button'} do
 			local childobj = typeof(newobj[v]) == 'table' and newobj[v].Object or newobj[v]
-			if typeof(childobj) == 'Instance' then
-				childobj:Destroy()
+			if typeof(childobj) == 'Instance' and not destroyed[childobj] then
+				destroyed[childobj] = true
 				childobj:ClearAllChildren()
+				childobj:Destroy()
 			end
 		end
 
@@ -1243,26 +1280,31 @@ function mainapi:UpdateTextGUI(afterload)
 	end
 	for index, data in active do
 		local name = textgui.LowercaseOption and textgui.LowercaseOption.Enabled and data.Name:lower() or data.Name
-		local extra = data.Module.ExtraText and data.Module.ExtraText() or nil
+		local extra
+		if data.Module.ExtraText then
+			local success, result = pcall(data.Module.ExtraText)
+			if success and result ~= nil and tostring(result) ~= '' then extra = tostring(result) end
+		end
 		local label = Instance.new('TextLabel')
 		label.Name = data.Name
-		label.Size = UDim2.fromOffset(math.max(92, getfontsize(name..(extra and ' '..extra or ''), 14, uipallet.Font).X + 14), 22)
+		label.Size = UDim2.fromOffset(math.max(92, getfontsize(name..(extra and ' '..extra or ''), 14, uipallet.Font).X + 15), 22)
 		label.BackgroundColor3 = Color3.fromRGB(2, 5, 10)
 		label.BackgroundTransparency = textgui.BackgroundOption and textgui.BackgroundOption.Enabled and 0.18 or 1
 		label.BorderSizePixel = 0
-		label.Text = name..(extra and '  '..tostring(extra) or '')
-		label.TextXAlignment = Enum.TextXAlignment.Right
-		label.TextColor3 = uipallet.Main
+		label.Text = '  '..name..(extra and ' '..extra or '')
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.TextColor3 = Color3.fromRGB(235, 238, 244)
 		label.TextSize = 14
 		label.FontFace = uipallet.FontSemiBold
 		label.LayoutOrder = index
 		label.Parent = textguiholder
-		local line = Instance.new('Frame')
+		local line = Instance.new('ImageLabel')
 		line.Name = 'Accent'
-		line.Size = UDim2.new(0, 2, 1, 0)
-		line.Position = UDim2.new(1, -2, 0, 0)
-		line.BackgroundColor3 = uipallet.Main
-		line.BorderSizePixel = 0
+		line.Size = UDim2.new(0, 4, 1, 0)
+		line.BackgroundTransparency = 1
+		line.Image = getcustomasset('newvape/assets/liquidbounce/textgui.png')
+		line.ScaleType = Enum.ScaleType.Stretch
+		line.ImageColor3 = uipallet.Main
 		line.Parent = label
 	end
 end
@@ -1531,26 +1573,20 @@ local function refreshSearch()
 end
 mainapi:Clean(searchbox:GetPropertyChangedSignal('Text'):Connect(refreshSearch))
 
-local movement = mainapi:CreateCategory({Name = 'Blatant', DisplayName = 'Movement'})
+local blatant = mainapi:CreateCategory({Name = 'Blatant'})
 local combat = mainapi:CreateCategory({Name = 'Combat'})
-local exploit = mainapi:CreateCategory({Name = 'Exploit'})
-local world = mainapi:CreateCategory({Name = 'World'})
-local player = mainapi:CreateCategory({Name = 'Utility', DisplayName = 'Player'})
-local render = mainapi:CreateCategory({Name = 'Render'})
-local misc = mainapi:CreateCategory({Name = 'Inventory', DisplayName = 'Misc'})
-local client = mainapi:CreateCategory({Name = 'Client'})
-local fun = mainapi:CreateCategory({Name = 'Minigames', DisplayName = 'Fun'})
-fun.Object.Position = UDim2.fromOffset(client.Object.Position.X.Offset, 260)
 local legitModules = mainapi.Legit.Modules
 mainapi.Legit = mainapi:CreateCategory({
 	Name = 'Legit',
 	Legit = true,
-	Modules = legitModules,
-	Visible = false,
-	ShowInSidebar = false
+	Modules = legitModules
 })
-mainapi.Categories.Main = client
-local clientsettings = client:CreateModule({Name = 'Client Settings'})
+local minigames = mainapi:CreateCategory({Name = 'Minigames'})
+local render = mainapi:CreateCategory({Name = 'Render'})
+local utility = mainapi:CreateCategory({Name = 'Utility'})
+local world = mainapi:CreateCategory({Name = 'World'})
+mainapi.Categories.Main = render
+local clientsettings = render:CreateModule({Name = 'Client Settings'})
 
 local guibind = {
 	Bind = table.clone(mainapi.Keybind)
@@ -1620,9 +1656,9 @@ local useteamcolor = clientsettings:CreateToggle({
 	Default = true,
 	Function = refreshEntityLibrary
 })
-client.Options['GUI bind indicator'] = guibindindicator
-client.Options['Teams by server'] = teamsbyserver
-client.Options['Use team color'] = useteamcolor
+render.Options['GUI bind indicator'] = guibindindicator
+render.Options['Teams by server'] = teamsbyserver
+render.Options['Use team color'] = useteamcolor
 mainapi.Blur = clientsettings:CreateToggle({
 	Name = 'Background blur',
 	Default = true,
