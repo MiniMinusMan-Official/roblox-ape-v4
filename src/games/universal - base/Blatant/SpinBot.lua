@@ -34,38 +34,46 @@ local function destroyGhost()
 end
 
 local function createGhost(charModel)
-    destroyGhost()
+	destroyGhost()
 
-    if not charModel then return end
+	if not charModel then return end
 
-    charModel.Archivable = true
-    VisualGhost = charModel:Clone()
-    charModel.Archivable = false
+	charModel.Archivable = true
+	VisualGhost = charModel:Clone()
+	charModel.Archivable = false
 
-    VisualGhost.Name = "AntiAimVisualGhost"
+	VisualGhost.Name = "AntiAimVisualGhost"
 
-    -- Disable physics/colliders and make transparent
-    for _, child in ipairs(VisualGhost:GetDescendants()) do
-        if child:IsA("BasePart") then
-            child.CanCollide = false
-            child.Anchored = true
-            child.Transparency = 0.75
-        elseif child:IsA("Script") or child:IsA("LocalScript") or child:IsA("BillboardGui") then
-            child:Destroy()
-        end
-    end
+	-- Destroy the ghost's Humanoid so Roblox physics/animations stop controlling it
+	local ghostHumanoid = VisualGhost:FindFirstChildOfClass("Humanoid")
+	if ghostHumanoid then
+		ghostHumanoid:Destroy()
+	end
 
-    -- Add Green Highlight
-    local highlight = Instance.new("Highlight")
-    highlight.Name = "GhostHighlight"
-    highlight.Adornee = VisualGhost
-    highlight.FillColor = Color3.fromRGB(0, 255, 100)
-    highlight.FillTransparency = 0.8
-    highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
-    highlight.OutlineTransparency = 0
-    highlight.Parent = VisualGhost
+	-- Disable all collision/interaction properties so it doesn't bump your real character
+	for _, child in ipairs(VisualGhost:GetDescendants()) do
+		if child:IsA("BasePart") then
+			child.CanCollide = false
+			child.CanTouch = false
+			child.CanQuery = false
+			child.Anchored = true
+			child.Transparency = 0.75
+		elseif child:IsA("Script") or child:IsA("LocalScript") or child:IsA("BillboardGui") or child:IsA("Animator") then
+			child:Destroy()
+		end
+	end
 
-    VisualGhost.Parent = workspace
+	-- Add Green Highlight
+	local highlight = Instance.new("Highlight")
+	highlight.Name = "GhostHighlight"
+	highlight.Adornee = VisualGhost
+	highlight.FillColor = Color3.fromRGB(0, 255, 100)
+	highlight.FillTransparency = 0.8
+	highlight.OutlineColor = Color3.fromRGB(0, 255, 0)
+	highlight.OutlineTransparency = 0
+	highlight.Parent = VisualGhost
+
+	VisualGhost.Parent = workspace
 end
 
 SpinBot = vape.Categories.Blatant:CreateModule({
@@ -123,9 +131,9 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 
 							local ghostLowerTorso = VisualGhost:FindFirstChild("LowerTorso")
 							if ghostLowerTorso then
-								local rootJoint = ghostLowerTorso:FindFirstChild("Root")
-								if rootJoint then
-									rootJoint.C0 = CFrame.new(rootJoint.C0.Position) * CFrame.Angles(math.rad(pitch), 0, 0)
+								local rootJoint = ghostLowerTorso:FindFirstChild("Root") or (VisualGhost:FindFirstChild("HumanoidRootPart") and VisualGhost.HumanoidRootPart:FindFirstChild("Root"))
+								if rootJoint and rootJoint:IsA("Motor6D") then
+									rootJoint.Transform = CFrame.Angles(math.rad(pitch), 0, 0)
 								end
 							end
 						end
