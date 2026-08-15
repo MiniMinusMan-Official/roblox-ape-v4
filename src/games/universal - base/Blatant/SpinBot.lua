@@ -43,22 +43,30 @@ local function createGhost(charModel)
 	charModel.Archivable = false
 
 	VisualGhost.Name = "AntiAimVisualGhost"
+
 	local ghostHumanoid = VisualGhost:FindFirstChildOfClass("Humanoid")
 	if ghostHumanoid then
 		ghostHumanoid:Destroy()
 	end
+
+	local GHOST_COLOR = Color3.fromRGB(5, 133, 104)
 	for _, child in ipairs(VisualGhost:GetDescendants()) do
 		if child:IsA("BasePart") then
 			child.CanCollide = false
 			child.CanTouch = false
 			child.CanQuery = false
-			child.Transparency = 0.75
-			
+			child.LocalTransparencyModifier = 0
+			child.Transparency = 0.35
+			child.Color = GHOST_COLOR
+			child.Material = Enum.Material.SmoothPlastic
+
 			if child.Name == "HumanoidRootPart" then
 				child.Anchored = true
 			else
 				child.Anchored = false
 			end
+		elseif child:IsA("Decal") or child:IsA("Clothing") or child:IsA("ShirtGraphic") then
+			child:Destroy()
 		elseif child:IsA("Script") or child:IsA("LocalScript") or child:IsA("BillboardGui") or child:IsA("Animator") then
 			child:Destroy()
 		end
@@ -66,9 +74,9 @@ local function createGhost(charModel)
 	local highlight = Instance.new("Highlight")
 	highlight.Name = "GhostHighlight"
 	highlight.Adornee = VisualGhost
-	highlight.FillColor = Color3.fromRGB(5, 133, 104)
-	highlight.FillTransparency = 0.9
-	highlight.OutlineColor = Color3.fromRGB(5, 133, 104)
+	highlight.FillColor = GHOST_COLOR
+	highlight.FillTransparency = 0.75
+	highlight.OutlineColor = Color3.fromRGB(0, 255, 128)
 	highlight.OutlineTransparency = 0
 	highlight.Parent = VisualGhost
 
@@ -84,10 +92,11 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 			if entitylib.isAlive then
 				OldAutoRotate = entitylib.character.Humanoid.AutoRotate
 				entitylib.character.Humanoid.AutoRotate = false
-				local charModel = entitylib.character.Character or game:GetService("Players").LocalPlayer.Character
-				createGhost(charModel)
+				if AntiAim.Enabled then
+					local charModel = entitylib.character.Character or game:GetService("Players").LocalPlayer.Character
+					createGhost(charModel)
+				end
 			end
-
 			SpinBot:Clean(runService.PreSimulation:Connect(function(delta)
 				if entitylib.isAlive then
 					local humanoid = entitylib.character.Humanoid
@@ -129,15 +138,17 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 							local ghostRoot = VisualGhost:FindFirstChild("HumanoidRootPart")
 							if ghostRoot then
 								local pitchRad = math.rad(pitch)
-								ghostRoot.CFrame = CFrame.new(root.Position) 
-									* CFrame.Angles(0, fakeYaw, 0) 
-									* CFrame.Angles(pitchRad, 0, 0)
-								local ghostLowerTorso = VisualGhost:FindFirstChild("LowerTorso")
-								if ghostLowerTorso then
-									local rootJoint = ghostLowerTorso:FindFirstChild("Root") 
-										or ghostRoot:FindFirstChild("Root")
-									if rootJoint and rootJoint:IsA("Motor6D") then
-										rootJoint.C0 = CFrame.new(rootJoint.C0.Position) * CFrame.Angles(pitchRad, 0, 0)
+								ghostRoot.CFrame = CFrame.new(root.Position) * CFrame.Angles(0, fakeYaw, 0)
+								local lowerTorso = VisualGhost:FindFirstChild("LowerTorso")
+								if lowerTorso then
+									local waistJoint = lowerTorso:FindFirstChild("Waist")
+									if waistJoint and waistJoint:IsA("Motor6D") then
+										waistJoint.C0 = CFrame.new(waistJoint.C0.Position) * CFrame.Angles(pitchRad, 0, 0)
+									else
+										local rootJoint = lowerTorso:FindFirstChild("Root") or ghostRoot:FindFirstChild("Root")
+										if rootJoint and rootJoint:IsA("Motor6D") then
+											rootJoint.C0 = CFrame.new(rootJoint.C0.Position) * CFrame.Angles(pitchRad, 0, 0)
+										end
 									end
 								end
 							end
