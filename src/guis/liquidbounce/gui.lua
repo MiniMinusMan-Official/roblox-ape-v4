@@ -1429,7 +1429,6 @@ function mainapi:UpdateTextGUI(afterload)
 		local line = Instance.new('ImageLabel')
 		line.Name = 'Accent'
 		line.Size = UDim2.new(0, 4, 1, 0)
-		line.Position = UDim2.fromOffset(-9, 0)
 		line.BackgroundTransparency = 1
 		line.Image = getcustomasset('newvape/assets/liquidbounce/textgui.png')
 		line.ScaleType = Enum.ScaleType.Stretch
