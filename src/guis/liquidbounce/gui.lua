@@ -1370,71 +1370,170 @@ function mainapi:UpdateGUI(_, _, _, default)
 	if textguilogo then textguilogo.ImageColor3 = Color3.new(1, 1, 1) end
 end
 
+local textguiRows = {}
+local textguiWidthCache = {}
+local textguiAccentImage
+
+local function getTextGUIWidth(text)
+	local cached = textguiWidthCache[text]
+	if cached then return cached end
+
+	cached = math.ceil(
+		getfontsize(text, 14, uipallet.FontSemiBold).X
+	) + 10
+
+	textguiWidthCache[text] = cached
+	return cached
+end
+
+local function createTextGUIRow(name)
+	textguiAccentImage = textguiAccentImage
+		or getcustomasset('newvape/assets/liquidbounce/textgui.png')
+
+	local row = Instance.new('Frame')
+	row.Name = name
+	row.Size = UDim2.fromOffset(0, 22)
+	row.BackgroundColor3 = Color3.fromRGB(2, 5, 10)
+	row.BorderSizePixel = 0
+	row.ClipsDescendants = false
+	row.Parent = textguiholder
+	addCorner(row, UDim.new(0, 2))
+
+	local label = Instance.new('TextLabel')
+	label.Name = 'Text'
+	label.Size = UDim2.new(1, -10, 1, 0)
+	label.Position = UDim2.fromOffset(7, 0)
+	label.BackgroundTransparency = 1
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextColor3 = Color3.fromRGB(235, 238, 244)
+	label.TextSize = 14
+	label.FontFace = uipallet.FontSemiBold
+	label.Parent = row
+
+	local line = Instance.new('ImageLabel')
+	line.Name = 'Accent'
+	line.Size = UDim2.new(0, 4, 1, 0)
+	line.Position = UDim2.fromOffset(-2, 0)
+	line.BackgroundTransparency = 1
+	line.Image = textguiAccentImage
+	line.ScaleType = Enum.ScaleType.Stretch
+	line.ImageColor3 = Color3.new(1, 1, 1)
+	line.Parent = row
+
+	return {
+		Object = row,
+		Label = label
+	}
+end
+
 function mainapi:UpdateTextGUI(afterload)
 	if not afterload and self.Loaded ~= true then return end
 	if not textgui or not textguiholder then return end
-	textguiholder.Visible = textgui.Enabled
+
+	local enabled = textgui.Enabled
+	textguiholder.Visible = enabled
+
 	if textguilogo then
-		textguilogo.Visible = textgui.Enabled
-			and (not textgui.WatermarkOption or textgui.WatermarkOption.Enabled)
+		textguilogo.Visible = enabled
+			and (not textgui.WatermarkOption
+				or textgui.WatermarkOption.Enabled)
 			and not clickgui.Visible
 	end
-	if not textgui.Enabled then return end
-	for _, child in textguiholder:GetChildren() do
-		if not child:IsA('UIListLayout') then child:Destroy() end
-	end
+
+	if not enabled then return end
+
 	local active = {}
-	for name, module in self.Modules do
-		if module.Enabled and module ~= textgui and module ~= bindsmodule then table.insert(active, {Name = name, Module = module}) end
+	local activeNames = {}
+
+	local function addModule(name, module)
+		if not module.Enabled
+			or module == textgui
+			or module == bindsmodule then
+			return
+		end
+
+		local shownName = textgui.LowercaseOption
+			and textgui.LowercaseOption.Enabled
+			and name:lower()
+			or name
+
+		local extra
+		if module.ExtraText then
+			local success, result = pcall(module.ExtraText)
+			if success and result ~= nil and tostring(result) ~= '' then
+				extra = tostring(result)
+			end
+		end
+
+		local displayText = shownName
+			..(extra and ' '..extra or '')
+
+		table.insert(active, {
+			Name = name,
+			DisplayText = displayText,
+			Width = getTextGUIWidth(displayText),
+			Module = module
+		})
+
+		activeNames[name] = true
 	end
+
+	for name, module in self.Modules do
+		addModule(name, module)
+	end
+
 	if self.Legit and self.Legit.Modules then
 		for name, module in self.Legit.Modules do
-			if module.Enabled then table.insert(active, {Name = name, Module = module}) end
+			addModule(name, module)
 		end
 	end
-	if textgui.SortOption and textgui.SortOption.Value == 'Alphabetical' then
-		table.sort(active, function(a, b) return a.Name:lower() < b.Name:lower() end)
+
+	if textgui.SortOption
+		and textgui.SortOption.Value == 'Alphabetical' then
+		table.sort(active, function(a, b)
+			return a.DisplayText:lower() < b.DisplayText:lower()
+		end)
 	else
 		table.sort(active, function(a, b)
-			return getfontsize(a.Name, 14, uipallet.Font).X > getfontsize(b.Name, 14, uipallet.Font).X
+			if a.Width == b.Width then
+				return a.DisplayText:lower() < b.DisplayText:lower()
+			end
+
+			return a.Width > b.Width
 		end)
 	end
-	for index, data in active do
-		local name = textgui.LowercaseOption and textgui.LowercaseOption.Enabled and data.Name:lower() or data.Name
-		local extra
-		if data.Module.ExtraText then
-			local success, result = pcall(data.Module.ExtraText)
-			if success and result ~= nil and tostring(result) ~= '' then extra = tostring(result) end
+
+	for name, row in textguiRows do
+		if not activeNames[name] then
+			row.Object.Visible = false
 		end
-		local displayText = name..(extra and ' '..extra or '')
-		local label = Instance.new('TextLabel')
-		label.Name = data.Name
-		label.Size = UDim2.fromOffset(math.ceil(getfontsize(displayText, 14, uipallet.FontSemiBold).X) + 10, 22)
-		label.BackgroundColor3 = Color3.fromRGB(2, 5, 10)
-		label.BackgroundTransparency = textgui.BackgroundOption and textgui.BackgroundOption.Enabled and 0.18 or 1
-		label.BorderSizePixel = 0
-		label.ClipsDescendants = false
-		label.Text = displayText
-		label.TextXAlignment = Enum.TextXAlignment.Left
-		label.TextColor3 = Color3.fromRGB(235, 238, 244)
-		label.TextSize = 14
-		label.FontFace = uipallet.FontSemiBold
-		label.LayoutOrder = index
-		label.Parent = textguiholder
-		addCorner(label, UDim.new(0, 2))
-		local padding = Instance.new('UIPadding')
-		padding.PaddingLeft = UDim.new(0, 7)
-		padding.PaddingRight = UDim.new(0, 3)
-		padding.Parent = label
-		local line = Instance.new('ImageLabel')
-		line.Name = 'Accent'
-		line.Size = UDim2.new(0, 4, 1, 0)
-		line.Position = UDim2.fromOffset(-9, 0)
-		line.BackgroundTransparency = 1
-		line.Image = getcustomasset('newvape/assets/liquidbounce/textgui.png')
-		line.ScaleType = Enum.ScaleType.Stretch
-		line.ImageColor3 = Color3.new(1, 1, 1)
-		line.Parent = label
+	end
+
+	local backgroundTransparency =
+		textgui.BackgroundOption
+		and textgui.BackgroundOption.Enabled
+		and 0.18
+		or 1
+
+	for index, data in active do
+		local row = textguiRows[data.Name]
+
+		if not row or not row.Object.Parent then
+			row = createTextGUIRow(data.Name)
+			textguiRows[data.Name] = row
+		end
+
+		row.Object.Visible = true
+		row.Object.LayoutOrder = index
+		row.Object.BackgroundTransparency = backgroundTransparency
+
+		if row.Object.Size.X.Offset ~= data.Width then
+			row.Object.Size = UDim2.fromOffset(data.Width, 22)
+		end
+
+		if row.Label.Text ~= data.DisplayText then
+			row.Label.Text = data.DisplayText
+		end
 	end
 end
 
