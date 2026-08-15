@@ -41,7 +41,7 @@ if inSCPRP then
 				OriginalValues = {}
 			end
 		end,
-		Tooltip = 'changes the fire rate of weapons'
+		Tooltip = 'changes the fire rate of weapons\nWarning: you will need to get the gun BEFORE enabling rapid fire\nsecond warning: it wont work on pistols since its detected'
 	})
 
 	FRate = RapidFire:CreateSlider({
