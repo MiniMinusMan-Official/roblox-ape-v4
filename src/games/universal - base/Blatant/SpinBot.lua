@@ -10,7 +10,6 @@ local AntiAimMode
 local lastupd = 0
 local jit_tog = false
 local SpinAngle = 0
-local OldAutoRotate
 local UpdateReplication
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
@@ -128,8 +127,6 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 			SpinAngle = 0
 
 			if entitylib.isAlive then
-				OldAutoRotate = entitylib.character.Humanoid.AutoRotate
-				entitylib.character.Humanoid.AutoRotate = false
 				if AntiAim.Enabled then
 					local charModel = entitylib.character.Character or game:GetService("Players").LocalPlayer.Character
 					createGhost(charModel)
@@ -137,9 +134,7 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 			end
 			SpinBot:Clean(runService.PreSimulation:Connect(function(delta)
 				if entitylib.isAlive then
-					local humanoid = entitylib.character.Humanoid
 					local root = entitylib.character.RootPart
-					humanoid.AutoRotate = false
 					SpinAngle = (SpinAngle + math.rad(20 * Value.Value) * delta) % (math.pi * 2)
 					local x, y, z = root.CFrame:ToOrientation()
 					local fakeYaw = YToggle.Enabled and SpinAngle or y
@@ -177,8 +172,6 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 									* CFrame.Angles(0, fakeYaw, 0)
 
 								local yawOffset = desiredRoot * realRoot.CFrame:Inverse()
-
-								-- Bottom-centre of the torso, where the waist bends.
 								local realPivot = realTorso.CFrame
 									* CFrame.new(0, -realTorso.Size.Y / 2, 0)
 
@@ -237,9 +230,6 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 			end))
 		else
 			destroyGhost()
-			if entitylib.isAlive then
-				entitylib.character.Humanoid.AutoRotate = OldAutoRotate == nil and true or OldAutoRotate
-			end
 		end
 	end,
 	Tooltip = 'Makes your character continuously spin'
