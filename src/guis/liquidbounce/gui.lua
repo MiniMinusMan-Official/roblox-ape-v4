@@ -671,7 +671,10 @@ function mainapi:CreateCategory(categorysettings)
 	categorylist.HorizontalAlignment = Enum.HorizontalAlignment.Center
 	categorylist.Parent = children
 
+	local resizingCategory = false
 	local function resizeCategory(instant)
+		if resizingCategory then return end
+		resizingCategory = true
 		local contentHeight = categorylist.AbsoluteContentSize.Y / scale.Scale
 		children.CanvasSize = UDim2.fromOffset(0, contentHeight)
 		local height = categoryapi.Expanded and math.min(32 + contentHeight, categorysettings.MaxHeight or 470) or 32
@@ -682,6 +685,7 @@ function mainapi:CreateCategory(categorysettings)
 				Size = UDim2.fromOffset(width, height)
 			})
 		end
+		resizingCategory = false
 	end
 
 	function categoryapi:CreateModule(modulesettings)
@@ -811,10 +815,17 @@ function mainapi:CreateCategory(categorysettings)
 		modulebutton.MouseButton2Click:Connect(function()
 			moduleapi:SetExpanded()
 		end)
+		local updatingModuleLayout = false
 		modulelist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			if updatingModuleLayout then return end
+			updatingModuleLayout = true
 			if mainapi.ThreadFix then setthreadidentity(8) end
-			modulechildren.Size = UDim2.new(1, 0, 0, modulelist.AbsoluteContentSize.Y / scale.Scale)
+			local targetHeight = modulelist.AbsoluteContentSize.Y / scale.Scale
+			if math.abs(modulechildren.Size.Y.Offset - targetHeight) > 0.01 then
+				modulechildren.Size = UDim2.new(1, 0, 0, targetHeight)
+			end
 			resizeCategory(true)
+			updatingModuleLayout = false
 		end)
 
 		moduleapi.Object = modulebutton
@@ -1188,14 +1199,14 @@ function mainapi:UpdateGUI(hue, sat, val, default)
 	for _, module in self.Modules do
 		if module.Enabled and module.Object then module.Object.TextColor3 = newAccent end
 		for _, option in module.Options do
-			if option.Color then option:Color(hue, sat, val, false) end
+			if type(option.Color) == 'function' then option:Color(hue, sat, val, false) end
 		end
 	end
 	if self.Legit and self.Legit.Modules then
 		for _, module in self.Legit.Modules do
 			if module.Enabled and module.Object then module.Object.TextColor3 = newAccent end
 			for _, option in module.Options do
-				if option.Color then option:Color(hue, sat, val, false) end
+				if type(option.Color) == 'function' then option:Color(hue, sat, val, false) end
 			end
 		end
 	end
@@ -1356,15 +1367,15 @@ sidebarstroke.Thickness = 1
 sidebarstroke.Parent = sidebar
 local sidebarlogo = Instance.new('ImageLabel')
 sidebarlogo.Name = 'Logo'
-sidebarlogo.Size = UDim2.fromOffset(145, 55)
-sidebarlogo.Position = UDim2.fromOffset(14, 12)
+sidebarlogo.Size = UDim2.fromOffset(145, 54)
+sidebarlogo.Position = UDim2.fromOffset(14, 8)
 sidebarlogo.BackgroundTransparency = 1
 sidebarlogo.Image = getcustomasset('newvape/assets/liquidbounce/logo.png')
 sidebarlogo.ScaleType = Enum.ScaleType.Fit
 sidebarlogo.Parent = sidebar
 local versionlabel = Instance.new('TextLabel')
 versionlabel.Size = UDim2.new(1, -24, 0, 18)
-versionlabel.Position = UDim2.fromOffset(12, 65)
+versionlabel.Position = UDim2.fromOffset(12, 67)
 versionlabel.BackgroundTransparency = 1
 versionlabel.Text = 'NEXTGEN  •  ROBLOX'
 versionlabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -1593,6 +1604,25 @@ mainapi.GUIBind = guibind
 mainapi.Notifications = clientsettings:CreateToggle({Name = 'Notifications', Default = true})
 mainapi.ToggleNotifications = clientsettings:CreateToggle({Name = 'Toggle notifications', Default = true})
 mainapi.MultiKeybind = clientsettings:CreateToggle({Name = 'Multi keybinds'})
+local guibindindicator = clientsettings:CreateToggle({Name = 'GUI bind indicator', Default = true})
+local function refreshEntityLibrary()
+	if mainapi.Libraries.entity and mainapi.Libraries.entity.Running then
+		mainapi.Libraries.entity.refresh()
+	end
+end
+local teamsbyserver = clientsettings:CreateToggle({
+	Name = 'Teams by server',
+	Default = true,
+	Function = refreshEntityLibrary
+})
+local useteamcolor = clientsettings:CreateToggle({
+	Name = 'Use team color',
+	Default = true,
+	Function = refreshEntityLibrary
+})
+client.Options['GUI bind indicator'] = guibindindicator
+client.Options['Teams by server'] = teamsbyserver
+client.Options['Use team color'] = useteamcolor
 mainapi.Blur = clientsettings:CreateToggle({
 	Name = 'Background blur',
 	Default = true,
@@ -1620,23 +1650,64 @@ mainapi.GUIColor = clientsettings:CreateColorSlider({
 	end
 })
 
-clientsettings:CreateDivider('Friends and profiles')
+clientsettings:CreateDivider('Friends, targets and profiles')
 local friendsupdate = Instance.new('BindableEvent')
 local friendscolorupdate = Instance.new('BindableEvent')
-local friends = clientsettings:CreateTextList({
+local friendscolor = {Hue = 0.62, Sat = 0.72, Value = 1}
+local friends
+local function updateFriends()
+	friendsupdate:Fire()
+	friendscolorupdate:Fire(friendscolor.Hue, friendscolor.Sat, friendscolor.Value)
+end
+friends = clientsettings:CreateTextList({
 	Name = 'Friends',
 	Placeholder = 'Roblox username',
 	Color = uipallet.Main,
-	Function = function()
-		friendsupdate:Fire()
-	end
+	Function = updateFriends
 })
 friends.Update = friendsupdate
 friends.ColorUpdate = friendscolorupdate
-friends.Color = {Hue = 0.62, Sat = 0.72, Value = 1}
+friends.Options = {}
+local recolorfriends = clientsettings:CreateToggle({
+	Name = 'Recolor visuals',
+	Default = true,
+	Function = updateFriends
+})
+friendscolor = clientsettings:CreateColorSlider({
+	Name = 'Friends color',
+	DefaultHue = friendscolor.Hue,
+	DefaultSat = friendscolor.Sat,
+	DefaultValue = friendscolor.Value,
+	Function = function(hue, sat, value)
+		if friends.SetListColor then friends:SetListColor(Color3.fromHSV(hue, sat, value)) end
+		friendscolorupdate:Fire(hue, sat, value)
+	end
+})
+local usefriends = clientsettings:CreateToggle({
+	Name = 'Use friends',
+	Default = true,
+	Function = updateFriends
+})
+friends.Options['Recolor visuals'] = recolorfriends
+friends.Options['Friends color'] = friendscolor
+friends.Options['Use friends'] = usefriends
 mainapi:Clean(friendsupdate)
 mainapi:Clean(friendscolorupdate)
 mainapi.Categories.Friends = friends
+
+local targetsupdate = Instance.new('BindableEvent')
+local targets
+targets = clientsettings:CreateTextList({
+	Name = 'Targets',
+	Placeholder = 'Roblox username',
+	Color = uipallet.Main,
+	Function = function()
+		targetsupdate:Fire()
+	end
+})
+targets.Update = targetsupdate
+mainapi:Clean(targetsupdate)
+mainapi.Categories.Targets = targets
 
 local profiles
 local profileUpdating = false
