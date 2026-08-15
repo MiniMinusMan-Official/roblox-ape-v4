@@ -16,6 +16,7 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
+local GhostParts = {}
 local VisualGhost = nil
 
 local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
@@ -27,10 +28,12 @@ end
 local VisualGhost = nil
 
 local function destroyGhost()
-    if VisualGhost then
-        VisualGhost:Destroy()
-        VisualGhost = nil
-    end
+	if VisualGhost then
+		VisualGhost:Destroy()
+		VisualGhost = nil
+	end
+
+	table.clear(GhostParts)
 end
 
 local function createGhost(charModel)
@@ -49,7 +52,8 @@ local function createGhost(charModel)
 		end
 	end
 	for _, child in ipairs(VisualGhost:GetDescendants()) do
-		if child:IsA("BasePart") then
+		if child:IsA('BasePart') then
+			child.Anchored = true
 			child.CanCollide = false
 			child.CanTouch = false
 			child.CanQuery = false
@@ -57,12 +61,21 @@ local function createGhost(charModel)
 			child.Transparency = 0.35
 			child.Color = GHOST_COLOR
 			child.Material = Enum.Material.SmoothPlastic
-
-			if child.Name == "HumanoidRootPart" then
-				child.Anchored = true
-			else
-				child.Anchored = false
-			end
+		elseif child:IsA('Motor6D')
+			or child:IsA('Weld')
+			or child:IsA('WeldConstraint')
+			or child:IsA('Constraint') then
+			child:Destroy()
+		elseif child:IsA('Decal')
+			or child:IsA('Clothing')
+			or child:IsA('ShirtGraphic') then
+			child:Destroy()
+		elseif child:IsA('Script')
+			or child:IsA('LocalScript')
+			or child:IsA('BillboardGui')
+			or child:IsA('Animator') then
+			child:Destroy()
+		end
 		elseif child:IsA("Decal") or child:IsA("Clothing") or child:IsA("ShirtGraphic") then
 			child:Destroy()
 		elseif child:IsA("Script") or child:IsA("LocalScript") or child:IsA("BillboardGui") or child:IsA("Animator") then
@@ -78,6 +91,31 @@ local function createGhost(charModel)
 	highlight.OutlineTransparency = 0
 	highlight.Parent = VisualGhost
 	VisualGhost.Parent = workspace
+end
+
+local function findGhostPart(realPart, realChar)
+	if GhostParts[realPart] and GhostParts[realPart].Parent then
+		return GhostParts[realPart]
+	end
+
+	local path = {}
+	local current = realPart
+
+	while current and current ~= realChar do
+		table.insert(path, 1, current.Name)
+		current = current.Parent
+	end
+
+	current = VisualGhost
+
+	for _, name in path do
+		current = current and current:FindFirstChild(name)
+	end
+
+	if current and current:IsA('BasePart') then
+		GhostParts[realPart] = current
+		return current
+	end
 end
 
 SpinBot = vape.Categories.Blatant:CreateModule({
@@ -127,47 +165,56 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 						lastPitchUpdate_Value = pitch
 						if VisualGhost and entitylib.character.Character then
 							local realChar = entitylib.character.Character
-							local ghostRoot = VisualGhost:FindFirstChild('HumanoidRootPart')
 							local realRoot = realChar:FindFirstChild('HumanoidRootPart')
+							local realTorso = realChar:FindFirstChild('UpperTorso')
+								or realChar:FindFirstChild('Torso')
 
-							if ghostRoot and realRoot then
-								ghostRoot.CFrame = CFrame.new(realRoot.Position)
+							if realRoot and realTorso then
+								local desiredRoot = CFrame.new(realRoot.Position)
 									* CFrame.Angles(0, fakeYaw, 0)
 
-								for _, realMotor in realChar:GetDescendants() do
-									if realMotor:IsA('Motor6D') then
-										local ghostMotor = VisualGhost:FindFirstChild(
-											realMotor.Name,
-											true
-										)
+								local yawOffset = desiredRoot * realRoot.CFrame:Inverse()
 
-										if ghostMotor and ghostMotor:IsA('Motor6D') then
-											ghostMotor.C0 = realMotor.C0
-											ghostMotor.C1 = realMotor.C1
-											ghostMotor.Transform = realMotor.Transform
+								-- Bottom-centre of the torso, where the waist bends.
+								local realPivot = realTorso.CFrame
+									* CFrame.new(0, -realTorso.Size.Y / 2, 0)
+
+								local ghostPivot = yawOffset * realPivot
+
+								local pitchOffset = ghostPivot
+									* CFrame.Angles(math.rad(pitch), 0, 0)
+									* ghostPivot:Inverse()
+
+								local lowerBody = {
+									HumanoidRootPart = true,
+									LowerTorso = true,
+
+									LeftUpperLeg = true,
+									LeftLowerLeg = true,
+									LeftFoot = true,
+
+									RightUpperLeg = true,
+									RightLowerLeg = true,
+									RightFoot = true,
+
+									['Left Leg'] = true,
+									['Right Leg'] = true
+								}
+
+								for _, realPart in realChar:GetDescendants() do
+									if realPart:IsA('BasePart') then
+										local ghostPart = findGhostPart(realPart, realChar)
+
+										if ghostPart then
+											local targetCFrame = yawOffset * realPart.CFrame
+
+											if not lowerBody[realPart.Name] then
+												targetCFrame = pitchOffset * targetCFrame
+											end
+
+											ghostPart.CFrame = targetCFrame
 										end
 									end
-								end
-
-								-- R15: bends the upper body and equipped gun.
-								local ghostJoint = VisualGhost:FindFirstChild('Waist', true)
-								local realJoint = realChar:FindFirstChild('Waist', true)
-
-								-- R6/fallback: pitches the entire torso.
-								if not ghostJoint then
-									ghostJoint = VisualGhost:FindFirstChild('RootJoint', true)
-									realJoint = realChar:FindFirstChild('RootJoint', true)
-										or realChar:FindFirstChild('Root', true)
-								end
-
-								if ghostJoint and ghostJoint:IsA('Motor6D') then
-									local originalTransform = realJoint
-										and realJoint:IsA('Motor6D')
-										and realJoint.Transform
-										or CFrame.identity
-
-									ghostJoint.Transform = originalTransform
-										* CFrame.Angles(math.rad(pitch), 0, 0)
 								end
 							end
 						end
