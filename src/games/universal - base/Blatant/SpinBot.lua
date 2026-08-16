@@ -123,7 +123,11 @@ local function createGhost(charModel)
 			child.CanTouch = false
 			child.CanQuery = false
 			child.LocalTransparencyModifier = 0
-			child.Transparency = 0.35
+			if child.Name == 'HumanoidRootPart' then
+				child.Transparency = 1
+			else
+				child.Transparency = 0.35
+			end
 			child.Color = GHOST_COLOR
 			child.Material = Enum.Material.SmoothPlastic
 		elseif child:IsA('Motor6D')
