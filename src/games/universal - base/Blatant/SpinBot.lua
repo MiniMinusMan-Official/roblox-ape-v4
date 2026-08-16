@@ -127,7 +127,7 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 			SpinAngle = 0
 
 			if entitylib.isAlive then
-				if AntiAim.Enabled then
+				if AntiAim and AntiAim.Enabled then
 					local charModel = entitylib.character.Character or game:GetService("Players").LocalPlayer.Character
 					createGhost(charModel)
 				end
@@ -139,7 +139,7 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 					local x, y, z = root.CFrame:ToOrientation()
 					local fakeYaw = YToggle.Enabled and SpinAngle or y
 					root.CFrame = CFrame.new(root.Position) * CFrame.Angles(XToggle.Enabled and SpinAngle or x, fakeYaw, ZToggle.Enabled and SpinAngle or z)
-					if inSCPRP and AntiAim.Enabled then
+					if inSCPRP and (AntiAim and AntiAim.Enabled) then
 						local pitch = 0
 						local currentTime = tick()
 						if AntiAimMode.Value == 'Static' then
@@ -229,12 +229,14 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 				end
 			end))
 		else
-			destroyGhost()
-			UpdateReplication:FireServer((function(b_vals)
-				local b = buffer.create(#b_vals)
-				for i = 1, #b_vals do buffer.writeu8(b, i - 1, b_vals[i]) end
-				return b
-			end)({ 2, 0, 0 }))
+			if AntiAim and AntiAim.Enabled then
+				destroyGhost()
+				UpdateReplication:FireServer((function(b_vals)
+					local b = buffer.create(#b_vals)
+					for i = 1, #b_vals do buffer.writeu8(b, i - 1, b_vals[i]) end
+					return b
+				end)({ 2, 0, 0 }))
+			end
 		end
 	end,
 	Tooltip = 'Makes your character continuously spin'
