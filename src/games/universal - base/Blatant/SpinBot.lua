@@ -19,6 +19,7 @@ local Players = game:GetService("Players")
 
 local LocalPlayer = Players.LocalPlayer
 local GhostParts = {}
+local GhostViewType
 local VisualGhost = nil
 local GhostCharacter = nil
 local HiddenParts = {}
@@ -37,6 +38,7 @@ local function destroyGhost()
 	end
 
 	GhostCharacter = nil
+	GhostViewType = nil
 	table.clear(GhostParts)
 end
 local function restorePlayerVisibility()
@@ -98,63 +100,85 @@ local function bendPlayer(charModel, pitch)
 		bendMotor(rightHip, inversePitch)
 	end
 end
-local function createGhost(charModel)
+local function createGhost(charModel, viewType)
 	destroyGhost()
 	if not charModel then return end
+
+	viewType = viewType or 'Transparent'
+
 	charModel.Archivable = true
 	VisualGhost = charModel:Clone()
 	charModel.Archivable = false
+
 	GhostCharacter = charModel
+	GhostViewType = viewType
 	VisualGhost.Name = 'AntiAimVisualGhost'
+
+	local playerStyle = viewType == 'Player'
+	local GHOST_COLOR = Color3.fromRGB(5, 133, 104)
+
 	local ghostHumanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
 	if ghostHumanoid then
 		ghostHumanoid:Destroy()
 	end
-	local GHOST_COLOR = Color3.fromRGB(5, 133, 104)
-	for _, child in VisualGhost:GetChildren() do
-		if child:IsA('Accessory') or child:IsA('Accoutrement') then
-			child:Destroy()
-		end
-	end
+
 	for _, child in VisualGhost:GetDescendants() do
 		if child:IsA('BasePart') then
 			child.Anchored = true
 			child.CanCollide = false
 			child.CanTouch = false
 			child.CanQuery = false
+			child.CastShadow = false
 			child.LocalTransparencyModifier = 0
-			if child.Name == 'HumanoidRootPart' then
-				child.Transparency = 1
-			else
-				child.Transparency = 0.65
+
+			if not playerStyle then
+				if child.Name == 'HumanoidRootPart' then
+					child.Transparency = 1
+				else
+					child.Transparency = 0.65
+				end
+
+				child.Color = GHOST_COLOR
+				child.Material = Enum.Material.SmoothPlastic
 			end
-			child.Color = GHOST_COLOR
-			child.Material = Enum.Material.SmoothPlastic
 		elseif child:IsA('Motor6D')
 			or child:IsA('Weld')
 			or child:IsA('WeldConstraint')
 			or child:IsA('Constraint') then
 			child:Destroy()
-		elseif child:IsA('Decal')
-			or child:IsA('Clothing')
-			or child:IsA('ShirtGraphic') then
-			child:Destroy()
 		elseif child:IsA('Script')
 			or child:IsA('LocalScript')
+			or child:IsA('ModuleScript')
 			or child:IsA('BillboardGui')
 			or child:IsA('Animator') then
+			child:Destroy()
+		elseif not playerStyle
+			and (
+				child:IsA('Decal')
+				or child:IsA('Clothing')
+				or child:IsA('ShirtGraphic')
+			) then
 			child:Destroy()
 		end
 	end
 
-	local highlight = Instance.new('Highlight')
-	highlight.Name = 'GhostHighlight'
-	highlight.Adornee = VisualGhost
-	highlight.FillColor = GHOST_COLOR
-	highlight.FillTransparency = 0.75
-	highlight.OutlineColor = Color3.fromRGB(0, 255, 128)
-	highlight.OutlineTransparency = 0
-	highlight.Parent = VisualGhost
+	if not playerStyle then
+		for _, child in VisualGhost:GetChildren() do
+			if child:IsA('Accessory')
+				or child:IsA('Accoutrement') then
+				child:Destroy()
+			end
+		end
+
+		local highlight = Instance.new('Highlight')
+		highlight.Name = 'GhostHighlight'
+		highlight.Adornee = VisualGhost
+		highlight.FillColor = GHOST_COLOR
+		highlight.FillTransparency = 0.75
+		highlight.OutlineColor = Color3.fromRGB(0, 255, 128)
+		highlight.OutlineTransparency = 0
+		highlight.Parent = VisualGhost
+	end
 
 	VisualGhost.Parent = workspace
 end
@@ -178,10 +202,13 @@ local function findGhostPart(realPart, realChar)
 		return current
 	end
 end
-local function updateGhost(realChar, pitch, fakeYaw)
-	if not VisualGhost or GhostCharacter ~= realChar then
-		createGhost(realChar)
+local function updateGhost(realChar, pitch, fakeYaw, viewType)
+	viewType = viewType or 'Transparent'
+
+	if not VisualGhost or GhostCharacter ~= realChar or GhostViewType ~= viewType then
+		createGhost(realChar, viewType)
 	end
+
 	if not VisualGhost then return end
 	local realRoot = realChar:FindFirstChild('HumanoidRootPart')
 	local realTorso = realChar:FindFirstChild('UpperTorso') or realChar:FindFirstChild('Torso')
@@ -225,19 +252,17 @@ local function updateAntiAimView(realChar, pitch, fakeYaw)
 		return
 	end
 	if AntiAimViewType.Value == 'Player' then
-		restorePlayerVisibility()
-		if VisualGhost then
-			destroyGhost()
-		end
-		bendPlayer(realChar, pitch)
+		restorePlayerBend()
+		updateGhost(realChar, pitch, fakeYaw, 'Player')
+		hidePlayer(realChar)
 	elseif AntiAimViewType.Value == 'Transparent' then
 		restorePlayerBend()
-		updateGhost(realChar, pitch, fakeYaw)
+		updateGhost(realChar, pitch, fakeYaw, 'Transparent')
 		hidePlayer(realChar)
 	elseif AntiAimViewType.Value == 'Both' then
 		restorePlayerBend()
 		restorePlayerVisibility()
-		updateGhost(realChar, pitch, fakeYaw)
+		updateGhost(realChar, pitch, fakeYaw, 'Transparent')
 	end
 end
 SpinBot = vape.Categories.Blatant:CreateModule({
@@ -344,6 +369,7 @@ if inSCPRP then
 			AntiAimPitchRandom.Object.Visible = ((AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) and val) or false
 			AntiAimMode.Object.Visible = val
 			AntiAimView.Object.Visible = val
+			AntiAimViewType.Object.Visible = val
 			if SpinBot.Enabled then
 				SpinBot:Toggle()
 				SpinBot:Toggle()
@@ -398,6 +424,11 @@ if inSCPRP then
 		DefaultMin = -90,
 		DefaultMax = 90
 	})
+	AntiAimPitch.Object.Visible = (AntiAimMode.Value == 'Static' and AntiAim.Enabled and true) or false
+	AntiAimPitchRandom.Object.Visible = ((AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) and AntiAim.Enabled) or false
+	AntiAimMode.Object.Visible = AntiAim.Enabled
+	AntiAimView.Object.Visible = AntiAim.Enabled
+	AntiAimViewType.Object.Visible = AntiAim.Enabled and AntiAimView.Enabled
 end
 XToggle = SpinBot:CreateToggle({Name = 'Spin X'})
 YToggle = SpinBot:CreateToggle({
