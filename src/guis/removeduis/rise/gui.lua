@@ -245,8 +245,9 @@ local function downloadFile(path, func)
 		createDownloader(path)
 		local suc, res = pcall(function()
 			local remotePath = select(1, path:gsub('newvape/', ''))
-			remotePath = remotePath:gsub('^assets/rise/', 'guis/rise/assets/')
-			return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/'..remotePath, true)
+			remotePath = remotePath:gsub('^assets/rise/', 'guis/removeduis/rise/assets/')
+			local sourceRef = isfile('newvape/profiles/commit.txt') and readfile('newvape/profiles/commit.txt') or 'main'
+			return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/'..sourceRef..'/src/'..remotePath, true)
 		end)
 		if not suc or res == '404: Not Found' then
 			if getcustomassets[path] then return getcustomassets[path] end

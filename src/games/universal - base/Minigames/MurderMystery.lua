@@ -47,7 +47,8 @@ MurderMystery = vape.Categories.Minigames:CreateModule({
 
 			entitylib.getEntityColor = function(ent)
 				ent = ent.Player
-				if not (ent and vape.Categories.Main.Options['Use team color'].Enabled) then return end
+				local useTeamColor = getModuleSetting('Use team color')
+				if not (ent and useTeamColor and useTeamColor.Enabled) then return end
 				if isFriend(ent, true) then
 					return Color3.fromHSV(vape.Categories.Friends.Options['Friends color'].Hue, vape.Categories.Friends.Options['Friends color'].Sat, vape.Categories.Friends.Options['Friends color'].Value)
 				end

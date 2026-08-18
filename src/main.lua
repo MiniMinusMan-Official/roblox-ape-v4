@@ -25,6 +25,7 @@ local httpService = cloneref(game:GetService('HttpService'))
 local sourceRef = isfile('newvape/profiles/commit.txt') and readfile('newvape/profiles/commit.txt') or 'main'
 local sourceRoot = 'https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/'..sourceRef..'/src/'
 local sourceTree
+local guiFolders = {}
 
 local function fetchSource(path)
 	local suc, res = pcall(function()
@@ -66,6 +67,29 @@ local function listSourceFiles(folder)
 	return files
 end
 
+local function sourceFileExists(path)
+	path = 'src/'..path
+	for _, item in getSourceTree() do
+		if item.type == 'blob' and item.path == path then
+			return true
+		end
+	end
+	return false
+end
+
+local function getGUIFolder(name)
+	if guiFolders[name] then return guiFolders[name] end
+
+	for _, folder in {'guis/'..name..'/', 'guis/removeduis/'..name..'/'} do
+		if sourceFileExists(folder..'base.lua') or sourceFileExists(folder..'gui.lua') then
+			guiFolders[name] = folder
+			return folder
+		end
+	end
+
+	error('Unknown GUI "'..name..'" in '..sourceRoot)
+end
+
 local function validAsset(path)
 	if not isfile(path) then return false end
 	local suc, data = pcall(readfile, path)
@@ -77,7 +101,8 @@ local function validAsset(path)
 end
 
 local function downloadGUIAssets(name)
-	local prefix = 'src/guis/'..name..'/assets/'
+	local sourceFolder = getGUIFolder(name)
+	local prefix = 'src/'..sourceFolder..'assets/'
 	local cacheFolder = 'newvape/assets/'..name..'/source-cache'
 	local assetLoader = getcustomasset or getsynasset
 	if not isfolder(cacheFolder) then makefolder(cacheFolder) end
@@ -106,24 +131,97 @@ local function indentSource(source, indent)
 	return indent..source:gsub('\n', '\n'..indent)
 end
 
-local function buildGUI(name)
-	local source = fetchSource('guis/'..name..'/gui.lua')
+local function replaceMarker(source, marker, replacement, location)
+	local count
+	source, count = source:gsub(marker, function()
+		return replacement
+	end, 1)
+	if count ~= 1 then
+		error('Missing '..location..' marker')
+	end
+	return source
+end
+
+local function buildLegacyGUI(name, folder)
+	local sourcePath = folder..'gui.lua'
+	local source = fetchSource(sourcePath)
 	local components = {}
 
-	for _, path in listSourceFiles('guis/'..name..'/components/') do
+	for _, path in listSourceFiles(folder..'components/') do
 		local componentName = path:match('([^/]+)%.lua$')
 		local body = indentSource(fetchSource(path), '\t\t')
 		table.insert(components, '\t'..componentName..' = function(optionsettings, children, api)\n'..body..'\n\tend,')
 	end
 
-	local count
-	source, count = source:gsub('%-%-Components', function()
-		return '--Components\n'..table.concat(components, '\n')
-	end, 1)
-	if count ~= 1 then
-		error('Missing --Components marker in guis/'..name..'/gui.lua')
+	return replaceMarker(
+		source,
+		'%-%-Components',
+		'--Components\n'..table.concat(components, '\n'),
+		sourcePath..' --Components'
+	)
+end
+
+local function buildModularGUI(name, folder)
+	local source = fetchSource(folder..'base.lua')
+	local libraries = {}
+	local libraryExports = {}
+
+	for _, path in listSourceFiles(folder..'libraries/') do
+		local libraryName = path:match('([^/]+)%.lua$')
+		table.insert(libraries, '-- BEGIN '..path:sub(#folder + 1)..'\n'..fetchSource(path)..'\n-- END '..path:sub(#folder + 1))
+		table.insert(libraryExports, 'vape.Libraries.'..libraryName..' = '..libraryName)
 	end
+
+	table.insert(libraryExports, 'vape.Libraries.getfontsize = vape.Libraries.getfontbounds')
+	table.insert(libraryExports, 'vape.Libraries.getcustomasset = vape.Libraries.getvapeasset')
+	source = replaceMarker(
+		source,
+		'%-%-Libraries',
+		'--Libraries\n'..table.concat(libraries, '\n\n')..'\n\n'..table.concat(libraryExports, '\n'),
+		folder..'base.lua --Libraries'
+	)
+
+	local components = {'components = {'}
+	for _, path in listSourceFiles(folder..'components/') do
+		local componentName = path:match('([^/]+)%.lua$')
+		local body = indentSource(fetchSource(path), '\t\t')
+		table.insert(components, '\t'..componentName..' = function(props, children, api)\n'..body..'\n\tend,')
+	end
+	table.insert(components, '}')
+	source = replaceMarker(
+		source,
+		'%-%-Components',
+		'--Components\n'..table.concat(components, '\n'),
+		folder..'base.lua --Components'
+	)
+
+	local initSource = fetchSource(folder..'init.lua')
+	local overlays = {}
+	for _, path in listSourceFiles(folder..'overlays/') do
+		table.insert(overlays, '-- BEGIN '..path:sub(#folder + 1)..'\n'..fetchSource(path)..'\n-- END '..path:sub(#folder + 1))
+	end
+	initSource = replaceMarker(
+		initSource,
+		'%-%-Overlays',
+		'--Overlays\n'..table.concat(overlays, '\n\n'),
+		folder..'init.lua --Overlays'
+	)
+	source = replaceMarker(
+		source,
+		'%-%-Init',
+		'--Init\n'..indentSource(initSource, '\t'),
+		folder..'base.lua --Init'
+	)
+
 	return source
+end
+
+local function buildGUI(name)
+	local folder = getGUIFolder(name)
+	if sourceFileExists(folder..'base.lua') then
+		return buildModularGUI(name, folder)
+	end
+	return buildLegacyGUI(name, folder)
 end
 
 local function buildUniversal()
@@ -189,8 +287,12 @@ local function finishLoading()
 
 	if not shared.vapereload then
 		if not vape.Categories then return end
-		if vape.Categories.Main.Options['GUI bind indicator'].Enabled then
-			vape:CreateNotification('Finished Loading', vape.VapeButton and 'Press the button in the top right to open GUI' or 'Press '..table.concat(vape.Keybind, ' + '):upper()..' to open GUI', 5)
+		local mainOptions = vape.Categories.Main and vape.Categories.Main.Options
+		local guiOptions = vape.Settings and vape.Settings.GUI and vape.Settings.GUI.Options
+		local bindIndicator = (guiOptions and guiOptions['GUI bind indicator']) or (mainOptions and mainOptions['GUI bind indicator'])
+		local guiBind = vape.GUIBind and vape.GUIBind.Keys or vape.Keybind or {'RightShift'}
+		if not bindIndicator or bindIndicator.Enabled then
+			vape:CreateNotification('Finished Loading', vape.VapeButton and 'Press the button in the top right to open GUI' or 'Press '..table.concat(guiBind, ' + '):upper()..' to open GUI', 5)
 			vape:CreateNotification('Ape v4', 'welcome to ape v4 lol', 5)
 		end
 	end
@@ -204,7 +306,10 @@ local gui = readfile('newvape/profiles/gui.txt')
 if not isfolder('newvape/assets/'..gui) then
 	makefolder('newvape/assets/'..gui)
 end
-downloadGUIAssets(gui)
+downloadGUIAssets('new')
+if gui ~= 'new' then
+	downloadGUIAssets(gui)
+end
 vape = loadstring(downloadFile('newvape/guis/'..gui..'.lua'), 'gui')()
 shared.vape = vape
 

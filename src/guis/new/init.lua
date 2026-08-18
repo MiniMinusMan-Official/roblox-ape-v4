@@ -98,7 +98,7 @@ vape:CreateCategory({
 	Size = UDim2.fromOffset(14, 14)
 })
 vape:CreateCategory({
-	Name = 'Inventory',
+	Name = 'Minigames',
 	Icon = getvapeasset('newvape/assets/new/inventory.png'),
 	Size = UDim2.fromOffset(15, 14)
 })
@@ -427,9 +427,9 @@ vape.RainbowUpdateSpeed = guipane:CreateSlider({
 	Suffix = 'hz'
 })
 
---[[guipane:CreateDropdown({
+guipane:CreateDropdown({
 	Name = 'GUI Theme',
-	List = inputService.TouchEnabled and {'new', 'old'} or {'new', 'old', 'rise'},
+	List = inputService.TouchEnabled and {'new', 'old'} or {'new', 'old', 'rise', 'liquidbounce'},
 	Function = function(val, mouse)
 		if mouse then
 			writefile('newvape/profiles/gui.txt', val)
@@ -437,12 +437,12 @@ vape.RainbowUpdateSpeed = guipane:CreateSlider({
 			if shared.VapeDeveloper then
 				loadstring(readfile('newvape/loader.lua'), 'loader')()
 			else
-				loadstring(game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/loader.lua', true))()
+				loadstring(game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/main/src/loader.lua', true))()
 			end
 		end
 	end,
-	Tooltip = 'new - The newest vape theme to since v4.05\nold - The vape theme pre v4.05\nrise - Rise 6.0'
-})]]
+	Tooltip = 'new - Current Vape UI\nold - Classic Vape UI\nrise - Rise 6.0\nliquidbounce - LiquidBounce UI'
+})
 
 guipane:CreateDropdown({
 	Name = 'Search bar style',

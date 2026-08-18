@@ -13,7 +13,7 @@ local infostroke
 
 SessionInfo = vape:CreateOverlay({
 	Name = 'Session Info',
-	Icon = getcustomasset('newvape/assets/new/textguiicon.png'),
+	Icon = getcustomasset('newvape/assets/new/textgui.png'),
 	Size = UDim2.fromOffset(16, 12),
 	Position = UDim2.fromOffset(12, 14),
 	Function = function(callback)
@@ -83,9 +83,6 @@ FontOption = SessionInfo:CreateFont({
 Hide = SessionInfo:CreateTextList({
 	Name = 'Blacklist',
 	Tooltip = 'Name of entry to hide.',
-	Icon = getcustomasset('newvape/assets/new/blockedicon.png'),
-	Tab = getcustomasset('newvape/assets/new/blockedtab.png'),
-	TabSize = UDim2.fromOffset(21, 16),
 	Color = Color3.fromRGB(250, 50, 56)
 })
 SessionInfo:CreateColorSlider({

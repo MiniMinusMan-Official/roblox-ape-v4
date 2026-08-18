@@ -85,9 +85,16 @@ do
 	local function downloadFile(path, callback)
 		if not isfile(path) then
 			createDownloader(path)
+			local relativePath = select(1, path:gsub('^newvape/', ''))
+			local guiName, assetPath = relativePath:match('^assets/([^/]+)/(.+)$')
+			local sourcePath = relativePath
+			if guiName and assetPath then
+				sourcePath = (guiName == 'new' and 'guis/new/assets/' or 'guis/removeduis/'..guiName..'/assets/')..assetPath
+			end
+			local sourceRef = isfile('newvape/profiles/commit.txt') and readfile('newvape/profiles/commit.txt') or 'main'
 
 			local success, data = pcall(function()
-				return game:HttpGet('https://raw.githubusercontent.com/7GrandDadPGN/VapeCompiled/'..readfile('newvape/profiles/commit.txt')..'/'..select(1, path:gsub('newvape/', '')), true)
+				return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/'..sourceRef..'/src/'..sourcePath:gsub(' ', '%%20'), true)
 			end)
 
 			if not success or data == '404: Not Found' then
@@ -105,7 +112,8 @@ do
 	end
 
 	getvapeasset = not inputService.TouchEnabled and getcustomasset and function(path)
-		return downloadFile(path, getcustomasset)
+		local mapped = shared.VapeAssetPaths and shared.VapeAssetPaths[path]
+		return mapped and getcustomasset(mapped) or downloadFile(path, getcustomasset)
 	end or function(path)
 		return vapeAssets[path] or ''
 	end

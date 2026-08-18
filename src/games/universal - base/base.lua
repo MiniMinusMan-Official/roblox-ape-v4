@@ -61,8 +61,14 @@ local assetfunction = getcustomasset
 local vape = shared.vape
 local tween = vape.Libraries.tween
 local targetinfo = vape.Libraries.targetinfo
-local getfontsize = vape.Libraries.getfontsize
-local getcustomasset = vape.Libraries.getcustomasset
+local getfontsize = vape.Libraries.getfontsize or vape.Libraries.getfontbounds
+local getcustomasset = vape.Libraries.getcustomasset or vape.Libraries.getvapeasset
+
+local function getModuleSetting(name)
+	local pane = vape.Settings and vape.Settings.Modules
+	local options = pane and pane.Options or vape.Categories.Main and vape.Categories.Main.Options
+	return options and options[name]
+end
 
 
 local TargetStrafeVector, SpiderShift, WaypointFolder
@@ -418,7 +424,8 @@ run(function()
 		if ent.NPC then return true end
 		if isFriend(ent.Player) then return false end
 		if not select(2, whitelist:get(ent.Player)) then return false end
-		if vape.Categories.Main.Options['Teams by server'].Enabled then
+		local teamsByServer = getModuleSetting('Teams by server')
+		if teamsByServer and teamsByServer.Enabled then
 			if not lplr.Team then return true end
 			if not ent.Player.Team then return true end
 			if ent.Player.Team ~= lplr.Team then return true end
@@ -429,7 +436,8 @@ run(function()
 
 	entitylib.getEntityColor = function(ent)
 		ent = ent.Player
-		if not (ent and vape.Categories.Main.Options['Use team color'].Enabled) then return end
+		local useTeamColor = getModuleSetting('Use team color')
+		if not (ent and useTeamColor and useTeamColor.Enabled) then return end
 		if isFriend(ent, true) then
 			return Color3.fromHSV(vape.Categories.Friends.Options['Friends color'].Hue, vape.Categories.Friends.Options['Friends color'].Sat, vape.Categories.Friends.Options['Friends color'].Value)
 		end
