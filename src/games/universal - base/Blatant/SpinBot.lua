@@ -126,7 +126,7 @@ local function createGhost(charModel)
 			if child.Name == 'HumanoidRootPart' then
 				child.Transparency = 1
 			else
-				child.Transparency = 0.35
+				child.Transparency = 0.65
 			end
 			child.Color = GHOST_COLOR
 			child.Material = Enum.Material.SmoothPlastic
