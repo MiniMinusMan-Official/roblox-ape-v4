@@ -19,7 +19,7 @@ logo.BackgroundTransparency = 1
 logo.Image = getvapeasset('newvape/assets/new/vapelogomini.png')
 logo.ImageColor3 = select(3, uipallet.Main:ToHSV()) > 0.5 and uipallet.Text or Color3.new(1, 1, 1)
 logo.Name = 'VapeLogo'
-logo.Position = UDim2.fromOffset(2, 11)
+logo.Position = UDim2.fromOffset(0, 11)
 logo.Size = UDim2.fromOffset(55, 16)
 logo.Parent = window
 local v4logo = Instance.new('ImageLabel')
@@ -122,8 +122,8 @@ discord.MouseButton1Click:Connect(function()
 		local body = httpService:JSONEncode({
 			nonce = httpService:GenerateGUID(false),
 			args = {
-				invite = {code = 'VZEQJxMSnG'},
-				code = 'VZEQJxMSnG'
+				invite = {code = 'dNt9bDNWDK'},
+				code = 'dNt9bDNWDK'
 			},
 			cmd = 'INVITE_BROWSER'
 		})
@@ -147,7 +147,7 @@ discord.MouseButton1Click:Connect(function()
 
 	task.spawn(function()
 		tooltip.Text = 'Copied!'
-		setclipboard('https://discord.gg/VZEQJxMSnG')
+		setclipboard('https://discord.gg/dNt9bDNWDK')
 	end)
 end)
 
