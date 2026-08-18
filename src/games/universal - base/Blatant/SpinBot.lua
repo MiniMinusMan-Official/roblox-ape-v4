@@ -132,6 +132,10 @@ local function createGhost(charModel, viewType)
 				Enum.HumanoidDisplayDistanceType.None
 			humanoid.HealthDisplayType =
 				Enum.HumanoidHealthDisplayType.AlwaysOff
+
+			pcall(function()
+				humanoid.EvaluateStateMachine = false
+			end)
 		end
 
 		for _, child in VisualGhost:GetDescendants() do
@@ -156,8 +160,7 @@ local function createGhost(charModel, viewType)
 				child.LocalTransparencyModifier = 0
 			end
 		end
-
-		VisualGhost.Parent = workspace
+		VisualGhost.Parent = workspace.CurrentCamera
 		return
 	end
 	local ghostHumanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
