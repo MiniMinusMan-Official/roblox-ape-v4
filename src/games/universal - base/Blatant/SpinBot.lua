@@ -106,9 +106,12 @@ local function createGhost(charModel, viewType)
 
 	viewType = viewType or 'Transparent'
 
+	local oldArchivable = charModel.Archivable
 	charModel.Archivable = true
 	VisualGhost = charModel:Clone()
-	charModel.Archivable = false
+	charModel.Archivable = oldArchivable
+
+	if not VisualGhost then return end
 
 	GhostCharacter = charModel
 	GhostViewType = viewType
@@ -117,9 +120,41 @@ local function createGhost(charModel, viewType)
 	local playerStyle = viewType == 'Player'
 	local GHOST_COLOR = Color3.fromRGB(5, 133, 104)
 
+	if playerStyle then
+		for _, child in VisualGhost:GetDescendants() do
+			if child:IsA('Script')
+				or child:IsA('LocalScript')
+				or child:IsA('ModuleScript') then
+				child:Destroy()
+			elseif child:IsA('BasePart') then
+				child.Anchored = true
+				child.CanCollide = false
+				child.CanTouch = false
+				child.CanQuery = false
+				child.LocalTransparencyModifier = 0
+			end
+		end
+		local humanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
+		if humanoid then
+			humanoid.DisplayDistanceType =
+				Enum.HumanoidDisplayDistanceType.None
+			humanoid.HealthDisplayType =
+				Enum.HumanoidHealthDisplayType.AlwaysOff
+		end
+
+		VisualGhost.Parent = workspace
+		return
+	end
 	local ghostHumanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
 	if ghostHumanoid then
 		ghostHumanoid:Destroy()
+	end
+
+	for _, child in VisualGhost:GetChildren() do
+		if child:IsA('Accessory')
+			or child:IsA('Accoutrement') then
+			child:Destroy()
+		end
 	end
 
 	for _, child in VisualGhost:GetDescendants() do
@@ -131,20 +166,22 @@ local function createGhost(charModel, viewType)
 			child.CastShadow = false
 			child.LocalTransparencyModifier = 0
 
-			if not playerStyle then
-				if child.Name == 'HumanoidRootPart' then
-					child.Transparency = 1
-				else
-					child.Transparency = 0.65
-				end
-
-				child.Color = GHOST_COLOR
-				child.Material = Enum.Material.SmoothPlastic
+			if child.Name == 'HumanoidRootPart' then
+				child.Transparency = 1
+			else
+				child.Transparency = 0.65
 			end
+
+			child.Color = GHOST_COLOR
+			child.Material = Enum.Material.SmoothPlastic
 		elseif child:IsA('Motor6D')
 			or child:IsA('Weld')
 			or child:IsA('WeldConstraint')
 			or child:IsA('Constraint') then
+			child:Destroy()
+		elseif child:IsA('Decal')
+			or child:IsA('Clothing')
+			or child:IsA('ShirtGraphic') then
 			child:Destroy()
 		elseif child:IsA('Script')
 			or child:IsA('LocalScript')
@@ -152,37 +189,20 @@ local function createGhost(charModel, viewType)
 			or child:IsA('BillboardGui')
 			or child:IsA('Animator') then
 			child:Destroy()
-		elseif not playerStyle
-			and (
-				child:IsA('Decal')
-				or child:IsA('Clothing')
-				or child:IsA('ShirtGraphic')
-			) then
-			child:Destroy()
 		end
 	end
 
-	if not playerStyle then
-		for _, child in VisualGhost:GetChildren() do
-			if child:IsA('Accessory')
-				or child:IsA('Accoutrement') then
-				child:Destroy()
-			end
-		end
-
-		local highlight = Instance.new('Highlight')
-		highlight.Name = 'GhostHighlight'
-		highlight.Adornee = VisualGhost
-		highlight.FillColor = GHOST_COLOR
-		highlight.FillTransparency = 0.75
-		highlight.OutlineColor = Color3.fromRGB(0, 255, 128)
-		highlight.OutlineTransparency = 0
-		highlight.Parent = VisualGhost
-	end
+	local highlight = Instance.new('Highlight')
+	highlight.Name = 'GhostHighlight'
+	highlight.Adornee = VisualGhost
+	highlight.FillColor = GHOST_COLOR
+	highlight.FillTransparency = 0.75
+	highlight.OutlineColor = Color3.fromRGB(0, 255, 128)
+	highlight.OutlineTransparency = 0
+	highlight.Parent = VisualGhost
 
 	VisualGhost.Parent = workspace
 end
-
 local function findGhostPart(realPart, realChar)
 	if GhostParts[realPart] and GhostParts[realPart].Parent then
 		return GhostParts[realPart]
