@@ -121,25 +121,40 @@ local function createGhost(charModel, viewType)
 	local GHOST_COLOR = Color3.fromRGB(5, 133, 104)
 
 	if playerStyle then
+		local humanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
+
+		if humanoid then
+			humanoid.AutoRotate = false
+			humanoid.PlatformStand = true
+			humanoid.BreakJointsOnDeath = false
+			humanoid.RequiresNeck = false
+			humanoid.DisplayDistanceType =
+				Enum.HumanoidDisplayDistanceType.None
+			humanoid.HealthDisplayType =
+				Enum.HumanoidHealthDisplayType.AlwaysOff
+		end
+
 		for _, child in VisualGhost:GetDescendants() do
 			if child:IsA('Script')
 				or child:IsA('LocalScript')
-				or child:IsA('ModuleScript') then
+				or child:IsA('ModuleScript')
+				or child:IsA('BillboardGui') then
+				child:Destroy()
+			elseif child:IsA('Motor6D')
+				or child:IsA('Weld')
+				or child:IsA('WeldConstraint')
+				or child:IsA('Constraint') then
 				child:Destroy()
 			elseif child:IsA('BasePart') then
 				child.Anchored = true
 				child.CanCollide = false
 				child.CanTouch = false
 				child.CanQuery = false
+				child.Massless = true
+				child.AssemblyLinearVelocity = Vector3.zero
+				child.AssemblyAngularVelocity = Vector3.zero
 				child.LocalTransparencyModifier = 0
 			end
-		end
-		local humanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
-		if humanoid then
-			humanoid.DisplayDistanceType =
-				Enum.HumanoidDisplayDistanceType.None
-			humanoid.HealthDisplayType =
-				Enum.HumanoidHealthDisplayType.AlwaysOff
 		end
 
 		VisualGhost.Parent = workspace
