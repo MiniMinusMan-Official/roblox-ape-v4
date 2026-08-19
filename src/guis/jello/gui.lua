@@ -25,6 +25,10 @@ local mainapi = {
 	Windows = {}
 }
 
+-- Some option defaults are applied while the interface is still being built.
+-- The complete renderer replaces this no-op once the Text GUI objects exist.
+mainapi.UpdateTextGUI = function() end
+
 local cloneref = cloneref or function(obj)
 	return obj
 end

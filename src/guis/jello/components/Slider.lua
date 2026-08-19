@@ -77,15 +77,16 @@ function optionapi:Color(hue, sat, val)
 	fill.BackgroundColor3 = Color3.fromHSV(hue, sat, val)
 	knob.BackgroundColor3 = fill.BackgroundColor3
 end
-function optionapi:SetValue(value, mouse, final)
+function optionapi:SetValue(value, mouse, final, silent)
 	value = tonumber(value)
 	if not value or value ~= value or value == math.huge or value == -math.huge then return end
 	value = math.clamp(value, optionsettings.Min, optionsettings.Max)
 	value = math.floor(value * optionsettings.Decimal) / optionsettings.Decimal
+	local changed = self.Value ~= value
 	self.Value = value
 	valuebox.Text = displayValue(value)
 	fill.Size = UDim2.fromScale(scaleFor(value), 1)
-	optionsettings.Function(value, final)
+	if not silent and (changed or final) then optionsettings.Function(value, final) end
 end
 local function setFromInput(input, final)
 	local scaleValue = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
@@ -111,7 +112,7 @@ end)
 valuebox.FocusLost:Connect(function(enter)
 	if enter then optionapi:SetValue(valuebox.Text:match('[-%d%.]+'), true, true) else valuebox.Text = displayValue(optionapi.Value) end
 end)
-optionapi:SetValue(optionapi.Value)
+optionapi:SetValue(optionapi.Value, nil, nil, true)
 optionapi.Object = slider
 api.Options[optionsettings.Name] = optionapi
 return optionapi
