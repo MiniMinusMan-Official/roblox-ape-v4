@@ -24,6 +24,8 @@ run(function()
 	local AutoFireMode
 	local AutoFirePosition
 	local Wallbang
+	local FunctionHook
+	local OthHook
 	local CircleColor
 	local CircleTransparency
 	local CircleFilled
@@ -36,8 +38,22 @@ run(function()
 	local ProjectileRaycast = RaycastParams.new()
 	ProjectileRaycast.RespectCanCollide = true
 	local fireoffset, rand, delayCheck = CFrame.identity, Random.new(), tick()
-	local oldnamecall, oldray
-	local namecallHookInstalled, rayHookInstalled = false, false
+	local dummyCamera = Instance.new('Camera')
+	local functionHookStates = {
+		Normal = {},
+		Oth = {}
+	}
+	local namecallHookStates = {}
+	local othAvailable = type(oth) == 'table'
+		and type(oth.hook) == 'function'
+
+	local function getMousePosition()
+		if inputService.TouchEnabled then
+			return gameCamera.ViewportSize / 2
+		end
+
+		return inputService:GetMouseLocation()
+	end
 
 	local function getTarget(origin, obj)
 		if rand.NextNumber(rand, 0, 100) > (AutoFire.Enabled and 100 or HitChance.Value) then return end
@@ -115,62 +131,136 @@ run(function()
 	Hooks.FindPartOnRay = Hooks.FindPartOnRayWithIgnoreList
 	Hooks.ViewportPointToRay = Hooks.ScreenPointToRay
 
+	local HookTargets = {
+		FindPartOnRay = workspace.FindPartOnRay,
+		FindPartOnRayWithIgnoreList = workspace.FindPartOnRayWithIgnoreList,
+		FindPartOnRayWithWhitelist = workspace.FindPartOnRayWithWhitelist,
+		ScreenPointToRay = dummyCamera.ScreenPointToRay,
+		ViewportPointToRay = dummyCamera.ViewportPointToRay,
+		Raycast = workspace.Raycast,
+		Ray = Ray.new
+	}
+
+	local function useOthBackend()
+		return OthHook and OthHook.Enabled and othAvailable or false
+	end
+
+	local function callerIsIgnored()
+		local calling = getcallingscript()
+		if not calling then return false end
+
+		local list = #IgnoredScripts.ListEnabled > 0
+			and IgnoredScripts.ListEnabled
+			or {'CameraModule', 'ControlScript', 'ControlModule'}
+
+		return table.find(list, tostring(calling)) ~= nil
+	end
+
+	local function installFunctionHook(methodName, useOth)
+		local target = HookTargets[methodName]
+		if not target then return end
+
+		local backendName = useOth and 'Oth' or 'Normal'
+		local states = functionHookStates[backendName]
+		if states[target] then return end
+
+		local state = {}
+		local hooker = useOth and oth.hook or hookfunction
+
+		state.Old = hooker(target, function(...)
+			local currentMethod = Method.Value
+			local currentUsesOth = useOthBackend()
+			local noNamecall = currentMethod == 'Ray'
+
+			if checkcaller()
+				or not SilentAim.Enabled
+				or currentMethod ~= methodName
+				or currentUsesOth ~= useOth
+				or (not FunctionHook.Enabled and not noNamecall)
+				or callerIsIgnored() then
+				return state.Old(...)
+			end
+
+			if noNamecall then
+				local args = {...}
+				local result = Hooks[methodName](args)
+
+				if result then
+					return unpack(result)
+				end
+
+				return state.Old(unpack(args))
+			end
+
+			local self, args = ..., {select(2, ...)}
+			local result = Hooks[methodName](args)
+
+			if result then
+				return unpack(result)
+			end
+
+			return state.Old(self, unpack(args))
+		end)
+
+		states[target] = state
+	end
+
+	local function installNamecallHook(useOth)
+		local backendName = useOth and 'Oth' or 'Normal'
+		if namecallHookStates[backendName] then return end
+
+		local state = {}
+		local function callback(...)
+			local methodName = getnamecallmethod()
+
+			if checkcaller()
+				or not SilentAim.Enabled
+				or Method.Value == 'Ray'
+				or methodName ~= Method.Value
+				or useOthBackend() ~= useOth
+				or callerIsIgnored() then
+				return state.Old(...)
+			end
+
+			local self, args = ..., {select(2, ...)}
+			local result = Hooks[methodName](args)
+
+			if result then
+				return unpack(result)
+			end
+
+			return state.Old(self, unpack(args))
+		end
+
+		state.Old = useOth
+			and oth.hook(getrawmetatable(game).__namecall, callback)
+			or hookmetamethod(game, '__namecall', callback)
+
+		namecallHookStates[backendName] = state
+	end
+
 	SilentAim = vape.Categories.Combat:CreateModule({
 		Name = 'SilentAim',
 		Function = function(callback)
 			if CircleObject then
 				CircleObject.Visible = callback and Mode.Value == 'Mouse'
 			end
+
 			if callback then
-				if Method.Value == 'Ray' and not rayHookInstalled then
-					oldray = hookfunction(Ray.new, function(origin, direction)
-						if checkcaller() or not SilentAim.Enabled or Method.Value ~= 'Ray' then
-							return oldray(origin, direction)
-						end
-						local calling = getcallingscript()
+				local methodName = Method.Value
+				local useOth = useOthBackend()
 
-						if calling then
-							local list = #IgnoredScripts.ListEnabled > 0 and IgnoredScripts.ListEnabled or {'ControlScript', 'ControlModule'}
-							if table.find(list, tostring(calling)) then
-								return oldray(origin, direction)
-							end
-						end
+				if FunctionHook.Enabled or methodName == 'Ray' then
+					installFunctionHook(methodName, useOth)
+				end
 
-						local args = {origin, direction}
-						Hooks.Ray(args)
-						return oldray(unpack(args))
-					end)
-					rayHookInstalled = true
-				elseif Method.Value ~= 'Ray' and not namecallHookInstalled then
-					oldnamecall = hookmetamethod(game, '__namecall', function(...)
-						if not SilentAim.Enabled or Method.Value == 'Ray' or getnamecallmethod() ~= Method.Value then
-							return oldnamecall(...)
-						end
-						if checkcaller() then
-							return oldnamecall(...)
-						end
-
-						local calling = getcallingscript()
-						if calling then
-							local list = #IgnoredScripts.ListEnabled > 0 and IgnoredScripts.ListEnabled or {'ControlScript', 'ControlModule'}
-							if table.find(list, tostring(calling)) then
-								return oldnamecall(...)
-							end
-						end
-
-						local self, args = ..., {select(2, ...)}
-						local res = Hooks[Method.Value](args)
-						if res then
-							return unpack(res)
-						end
-						return oldnamecall(self, unpack(args))
-					end)
-					namecallHookInstalled = true
+				if methodName ~= 'Ray' then
+					installNamecallHook(useOth)
 				end
 
 				repeat
 					if CircleObject then
-						CircleObject.Position = inputService:GetMouseLocation()
+						CircleObject.Position = getMousePosition()
 					end
 
 					if AutoFire.Enabled then
@@ -260,7 +350,8 @@ run(function()
 	})
 
 	IgnoredScripts = SilentAim:CreateTextList({
-		Name = 'Ignored Scripts'
+		Name = 'Ignored Scripts',
+		Default = {'CameraModule'}
 	})
 
 	Range = SilentAim:CreateSlider({
@@ -340,6 +431,30 @@ run(function()
 		Name = 'Wallbang'
 	})
 
+	FunctionHook = SilentAim:CreateToggle({
+		Name = 'Function hook',
+		Function = function()
+			if SilentAim.Enabled then
+				SilentAim:Toggle()
+				SilentAim:Toggle()
+			end
+		end,
+		Tooltip = 'Hooks direct index calls such as workspace.Raycast (used by some games)'
+	})
+
+	OthHook = SilentAim:CreateToggle({
+		Name = 'Oth hook',
+		Function = function()
+			if SilentAim.Enabled then
+				SilentAim:Toggle()
+				SilentAim:Toggle()
+			end
+		end,
+		Tooltip = othAvailable
+			and 'Uses the Oth hook backend for games that check normal metamethod hooks'
+			or 'Oth is unavailable in this executor; the normal hook backend will be used'
+	})
+
 	SilentAim:CreateToggle({
 		Name = 'Range Circle',
 		Function = function(callback)
@@ -347,7 +462,7 @@ run(function()
 				CircleObject = Drawing.new('Circle')
 				CircleObject.Filled = CircleFilled.Enabled
 				CircleObject.Color = Color3.fromHSV(CircleColor.Hue, CircleColor.Sat, CircleColor.Value)
-				CircleObject.Position = vape.gui.AbsoluteSize / 2
+				CircleObject.Position = getMousePosition()
 				CircleObject.Radius = Range.Value
 				CircleObject.NumSides = 100
 				CircleObject.Transparency = 1 - CircleTransparency.Value

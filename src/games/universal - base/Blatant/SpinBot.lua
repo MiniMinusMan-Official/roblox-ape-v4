@@ -122,31 +122,10 @@ local function createGhost(charModel, viewType)
 
 	if playerStyle then
 		local humanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
-		local ghostRoot = VisualGhost:FindFirstChild('HumanoidRootPart')
-
-		for _, child in VisualGhost:GetDescendants() do
-			if child:IsA('Script')
-				or child:IsA('LocalScript')
-				or child:IsA('ModuleScript')
-				or child:IsA('BillboardGui') then
-				child:Destroy()
-			elseif child:IsA('BasePart') then
-				child.Anchored = false
-				child.CanCollide = false
-				child.CanTouch = false
-				child.CanQuery = false
-				child.Massless = true
-				child.LocalTransparencyModifier = 0
-			end
-		end
-
-		if ghostRoot then
-			ghostRoot.Anchored = true
-			ghostRoot.Transparency = 1
-		end
 
 		if humanoid then
 			humanoid.AutoRotate = false
+			humanoid.PlatformStand = true
 			humanoid.BreakJointsOnDeath = false
 			humanoid.RequiresNeck = false
 			humanoid.DisplayDistanceType =
@@ -158,14 +137,30 @@ local function createGhost(charModel, viewType)
 				humanoid.EvaluateStateMachine = false
 			end)
 		end
-		VisualGhost.Parent = workspace
 
-		if humanoid then
-			pcall(function()
-				humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-			end)
+		for _, child in VisualGhost:GetDescendants() do
+			if child:IsA('Script')
+				or child:IsA('LocalScript')
+				or child:IsA('ModuleScript')
+				or child:IsA('BillboardGui') then
+				child:Destroy()
+			elseif child:IsA('Motor6D')
+				or child:IsA('Weld')
+				or child:IsA('WeldConstraint')
+				or child:IsA('Constraint') then
+				child:Destroy()
+			elseif child:IsA('BasePart') then
+				child.Anchored = true
+				child.CanCollide = false
+				child.CanTouch = false
+				child.CanQuery = false
+				child.Massless = true
+				child.AssemblyLinearVelocity = Vector3.zero
+				child.AssemblyAngularVelocity = Vector3.zero
+				child.LocalTransparencyModifier = 0
+			end
 		end
-
+		VisualGhost.Parent = workspace.CurrentCamera
 		return
 	end
 	local ghostHumanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
@@ -245,77 +240,11 @@ local function findGhostPart(realPart, realChar)
 		return current
 	end
 end
-local function updatePlayerGhost(realChar, pitch, fakeYaw)
-	if not VisualGhost then return end
-
-	local realRoot = realChar:FindFirstChild('HumanoidRootPart')
-	local ghostRoot = VisualGhost:FindFirstChild('HumanoidRootPart')
-
-	if not realRoot or not ghostRoot then return end
-
-	for _, realMotor in realChar:GetDescendants() do
-		if realMotor:IsA('Motor6D') then
-			local realParent = realMotor.Parent
-			local ghostParent
-
-			if realParent:IsA('BasePart') then
-				ghostParent = findGhostPart(realParent, realChar)
-			end
-
-			local ghostMotor = ghostParent and ghostParent:FindFirstChild(realMotor.Name)
-
-			if ghostMotor and ghostMotor:IsA('Motor6D') then
-				ghostMotor.Transform = realMotor.Transform
-			end
-		end
-	end
-	ghostRoot.CFrame = CFrame.new(realRoot.Position) * CFrame.Angles(0, fakeYaw, 0)
-
-	local pitchOffset = CFrame.Angles(math.rad(pitch), 0, 0)
-	local inversePitch = CFrame.Angles(math.rad(-pitch), 0, 0)
-
-	local realWaist = findMotor(realChar, 'Waist')
-	local ghostWaist = findMotor(VisualGhost, 'Waist')
-
-	if realWaist and ghostWaist then
-		ghostWaist.Transform = realWaist.Transform * pitchOffset
-		return
-	end
-
-	local realRootJoint = findMotor(realChar, 'RootJoint')
-	local ghostRootJoint = findMotor(VisualGhost, 'RootJoint')
-
-	if realRootJoint and ghostRootJoint then
-		ghostRootJoint.Transform =
-			realRootJoint.Transform * pitchOffset
-	end
-
-	local realLeftHip = findMotor(realChar, 'Left Hip')
-	local ghostLeftHip = findMotor(VisualGhost, 'Left Hip')
-
-	if realLeftHip and ghostLeftHip then
-		ghostLeftHip.Transform =
-			realLeftHip.Transform * inversePitch
-	end
-
-	local realRightHip = findMotor(realChar, 'Right Hip')
-	local ghostRightHip = findMotor(VisualGhost, 'Right Hip')
-
-	if realRightHip and ghostRightHip then
-		ghostRightHip.Transform =
-			realRightHip.Transform * inversePitch
-	end
-end
 local function updateGhost(realChar, pitch, fakeYaw, viewType)
 	viewType = viewType or 'Transparent'
 
 	if not VisualGhost or GhostCharacter ~= realChar or GhostViewType ~= viewType then
 		createGhost(realChar, viewType)
-	end
-	
-	if viewType == 'Player' then
-		updatePlayerGhost(realChar, pitch, fakeYaw)
-		return
 	end
 
 	if not VisualGhost then return end
