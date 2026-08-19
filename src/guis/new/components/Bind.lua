@@ -165,11 +165,13 @@ function component:DestroyMobileButton()
 end
 
 function component:Load(data)
-	self.Hold = data.Hold
-	self:SetBind(data.Keys)
+	data = type(data) == 'table' and data or {}
+	self.Hold = data.Hold == true
+	self:SetBind(type(data.Keys) == 'table' and data.Keys or data)
 
-	if data.Mobile then
-		self:CreateMobileButton(Vector2.new(data.Mobile.X, data.Mobile.Y))
+	local mobile = type(data.Mobile) == 'table' and data.Mobile or data.Mobile == true and data
+	if mobile and type(mobile.X) == 'number' and type(mobile.Y) == 'number' then
+		self:CreateMobileButton(Vector2.new(mobile.X, mobile.Y))
 	end
 end
 
@@ -185,8 +187,20 @@ function component:Save(data)
 end
 
 function component:SetBind(keys, mouse)
+	if type(keys) == 'table' and type(keys.Keys) == 'table' then
+		keys = keys.Keys
+	end
+	keys = type(keys) == 'table' and keys or {}
+	local cleanKeys = {}
+	for _, key in keys do
+		if type(key) == 'string' and key ~= '' then
+			table.insert(cleanKeys, key)
+		end
+	end
+	keys = cleanKeys
+
 	if props and props.NoRemove and #keys <= 0 then
-		keys = props.Default
+		keys = type(props.Default) == 'table' and table.clone(props.Default) or {'RightShift'}
 	end
 
 	self.Binding = nil

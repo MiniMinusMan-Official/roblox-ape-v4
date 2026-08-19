@@ -12,6 +12,7 @@ local vape = {
 	Modules = {},
 	Place = game.PlaceId,
 	Profile = 'default',
+	ProfileCache = {},
 	RainbowSliders = {},
 	Settings = {},
 	SettingToggleNotifications = {},
@@ -61,6 +62,56 @@ local function loadJson(path)
 	end)
 
 	return success and type(data) == 'table' and data or nil
+end
+
+local profileFiles = {}
+local function getProfileName(path)
+	local file = tostring(path):gsub('\\', '/'):match('([^/]+)$') or ''
+	if file:sub(-4):lower() ~= '.txt' then return end
+	local name = file:sub(1, -5)
+	if name == 'gui' or name == 'color' or name == 'commit' or name == 'whitelist' or name:sub(-4) == '.gui' then return end
+
+	local place = tostring(game.PlaceId)
+	if name:sub(-#place) == place then
+		return name:sub(1, -#place - 1), 3
+	end
+
+	local prefix, digits = name:match('^(.-)(%d+)$')
+	if prefix and prefix ~= '' and #digits >= 6 then
+		return prefix, 1
+	end
+	return name, 2
+end
+
+local function discoverProfileFiles()
+	table.clear(profileFiles)
+	local names = {}
+	if type(listfiles) ~= 'function' then return names end
+	local success, files = pcall(listfiles, 'newvape/profiles')
+	if not success or type(files) ~= 'table' then return names end
+
+	for _, path in files do
+		local name, score = getProfileName(path)
+		if name and name ~= '' then
+			local data = loadJson(path)
+			if data and (type(data.Modules) == 'table' or type(data.Legit) == 'table') then
+				local current = profileFiles[name]
+				if not current or score > current.Score then
+					profileFiles[name] = {Path = path, Score = score}
+				end
+				names[name] = true
+			end
+		end
+	end
+	return names
+end
+
+local function getProfilePath(name)
+	local canonical = 'newvape/profiles/'..name..game.PlaceId..'.txt'
+	if isfile(canonical) then return canonical end
+	local portable = 'newvape/profiles/'..name..'.txt'
+	if isfile(portable) then return portable end
+	return profileFiles[name] and profileFiles[name].Path or nil
 end
 
 --Libraries
@@ -448,18 +499,8 @@ function vape:Load(skipgui, profile)
 			canSave = false
 		end
 
-		if guiData.v ~= 1 then
-			guiData.Categories.Main = nil
-		end
-
-		self.Profile = profile or guiData.Profile or 'default'
-		if self.ProfileLabel then
-			self.ProfileLabel.Text = #self.Profile > 10 and self.Profile:sub(1, 10)..'...' or self.Profile
-			self.ProfileLabel.Size = UDim2.fromOffset(getfontbounds(self.ProfileLabel.Text, self.ProfileLabel.TextSize, self.ProfileLabel.Font).X + 16, 24)
-		end
-
 		if not skipgui then
-			for name, data in guiData.Categories do
+			for name, data in (type(guiData.Categories) == 'table' and guiData.Categories or {}) do
 				local category = self.Categories[name]
 				if category then
 					category:Load(data)
@@ -468,23 +509,58 @@ function vape:Load(skipgui, profile)
 		end
 	end
 
+	self.Profile = profile or guiData.Profile or self.Profile or 'default'
+	if self.ProfileLabel then
+		self.ProfileLabel.Text = #self.Profile > 10 and self.Profile:sub(1, 10)..'...' or self.Profile
+		self.ProfileLabel.Size = UDim2.fromOffset(getfontbounds(self.ProfileLabel.Text, self.ProfileLabel.TextSize, self.ProfileLabel.Font).X + 16, 24)
+	end
+
+	if not skipgui and self.GUIBind then
+		local mainSettings = type(guiData.Categories) == 'table' and guiData.Categories.Main
+		mainSettings = type(mainSettings) == 'table' and mainSettings.Settings
+		mainSettings = type(mainSettings) == 'table' and mainSettings.Settings
+		local savedBind = guiData.Keybind or (type(mainSettings) == 'table' and mainSettings['Rebind GUI'])
+		if savedBind then self.GUIBind:Load(savedBind) end
+	end
+
 	if not self.Categories.Profiles:GetValue('default') then
 		self.Categories.Profiles:ChangeValue('default', true)
 	end
+	local profileCategory = self.Categories.Profiles
+	local legacyProfiles = type(guiData.Profiles) == 'table' and guiData.Profiles or {}
+	for _, entry in legacyProfiles do
+		if type(entry) == 'table' and type(entry.Name) == 'string' then
+			local _, current = profileCategory:GetValue(entry.Name)
+			if not current then
+				profileCategory:CreateProfile(entry.Name, entry.Bind)
+			elseif type(entry.Bind) == 'table' then
+				local keys = type(entry.Bind.Keys) == 'table' and entry.Bind.Keys or entry.Bind
+				if #keys > 0 then current.Bind:Load(entry.Bind) end
+			end
+		end
+	end
+	for name in discoverProfileFiles() do
+		if not profileCategory:GetValue(name) then
+			profileCategory:CreateProfile(name)
+		end
+	end
+	profileCategory:ChangeValue(nil, true)
 
-	if isfile('newvape/profiles/'..self.Profile..self.Place..'.txt') then
-		local mainData = loadJson('newvape/profiles/'..self.Profile..self.Place..'.txt')
+	local profilePath = getProfilePath(self.Profile)
+	if profilePath then
+		local mainData = loadJson(profilePath)
 		if not mainData then
 			mainData = {Categories = {}, Modules = {}, Legit = {}}
 			self:CreateNotification('Vape', 'Failed to load '..self.Profile..' profile.', 10, 'alert')
 			canSave = false
 		end
 
-		if mainData.v ~= 1 then
-			for _, data in mainData.Modules do
-				data.Bind = {Keys = data.Bind}
-				data.Visible = true
-			end
+		mainData.Categories = type(mainData.Categories) == 'table' and mainData.Categories or {}
+		mainData.Modules = type(mainData.Modules) == 'table' and mainData.Modules or {}
+		mainData.Legit = type(mainData.Legit) == 'table' and mainData.Legit or {}
+		self.ProfileCache[self.Profile] = mainData
+		for _, data in mainData.Modules do
+			if type(data) == 'table' and data.Visible == nil then data.Visible = true end
 		end
 
 		for name, data in mainData.Categories do
@@ -550,7 +626,7 @@ function vape:Load(skipgui, profile)
 end
 
 function vape:LoadOptions(obj, data)
-	for name, componentData in data do
+	for name, componentData in (type(data) == 'table' and data or {}) do
 		local component = obj.Options[name]
 
 		if component then
@@ -594,18 +670,27 @@ function vape:Save(newProfile)
 		return
 	end
 
-	local guiData = {
-		Categories = {},
-		Profile = newProfile or self.Profile,
-		v = 1
-	}
+	local guiPath = 'newvape/profiles/'..game.GameId..'.gui.txt'
+	local guiData = loadJson(guiPath) or {}
+	guiData.Categories = type(guiData.Categories) == 'table' and guiData.Categories or {}
+	guiData.Profile = newProfile or self.Profile
+	guiData.Keybind = self.GUIBind and table.clone(self.GUIBind.Keys) or guiData.Keybind
+	guiData.Profiles = {}
+	if self.Categories.Profiles then
+		for _, profile in self.Categories.Profiles.List do
+			local entry = {Name = profile.Name}
+			profile.Bind:Save(entry)
+			table.insert(guiData.Profiles, entry)
+		end
+	end
+	guiData.v = 1
 
-	local mainData = {
-		Modules = {},
-		Categories = {},
-		Legit = {},
-		v = 1
-	}
+	local mainData = self.ProfileCache[self.Profile]
+	mainData = type(mainData) == 'table' and mainData or {}
+	mainData.Modules = type(mainData.Modules) == 'table' and mainData.Modules or {}
+	mainData.Categories = type(mainData.Categories) == 'table' and mainData.Categories or {}
+	mainData.Legit = type(mainData.Legit) == 'table' and mainData.Legit or {}
+	mainData.v = 1
 
 	for name, category in self.Categories do
 		category:Save((category.Type == 'Overlay' and mainData or guiData).Categories)
@@ -619,7 +704,8 @@ function vape:Save(newProfile)
 		module:Save(mainData.Legit)
 	end
 
-	writefile('newvape/profiles/'..game.GameId..'.gui.txt', httpService:JSONEncode(guiData))
+	self.ProfileCache[self.Profile] = mainData
+	writefile(guiPath, httpService:JSONEncode(guiData))
 	writefile('newvape/profiles/'..self.Profile..self.Place..'.txt', httpService:JSONEncode(mainData))
 end
 

@@ -80,11 +80,10 @@ end
 local function getGUIFolder(name)
 	if guiFolders[name] then return guiFolders[name] end
 
-	for _, folder in {'guis/'..name..'/', 'guis/removeduis/'..name..'/'} do
-		if sourceFileExists(folder..'base.lua') or sourceFileExists(folder..'gui.lua') then
-			guiFolders[name] = folder
-			return folder
-		end
+	local folder = 'guis/'..name..'/'
+	if sourceFileExists(folder..'base.lua') or sourceFileExists(folder..'gui.lua') then
+		guiFolders[name] = folder
+		return folder
 	end
 
 	error('Unknown GUI "'..name..'" in '..sourceRoot)

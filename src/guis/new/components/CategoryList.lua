@@ -433,6 +433,7 @@ function component:GetValue(name)
 end
 
 function component:Load(data)
+	data = type(data) == 'table' and data or {}
 	vape:LoadOptions(self, data.Options)
 
 	if data.Enabled then
@@ -444,8 +445,10 @@ function component:Load(data)
 	end
 
 	if props.Profiles then
-		for _, profile in data.List do
-			self:CreateProfile(profile.Name, profile.Bind)
+		for _, profile in (type(data.List) == 'table' and data.List or {}) do
+			if type(profile) == 'table' and type(profile.Name) == 'string' and not self:GetValue(profile.Name) then
+				self:CreateProfile(profile.Name, profile.Bind)
+			end
 		end
 
 		self:ChangeValue(nil, true)

@@ -89,7 +89,7 @@ do
 			local guiName, assetPath = relativePath:match('^assets/([^/]+)/(.+)$')
 			local sourcePath = relativePath
 			if guiName and assetPath then
-				sourcePath = (guiName == 'new' and 'guis/new/assets/' or 'guis/removeduis/'..guiName..'/assets/')..assetPath
+				sourcePath = 'guis/'..guiName..'/assets/'..assetPath
 			end
 			local sourceRef = isfile('newvape/profiles/commit.txt') and readfile('newvape/profiles/commit.txt') or 'main'
 

@@ -126,15 +126,17 @@ function component:Destroy()
 end
 
 function component:Load(data)
+	data = type(data) == 'table' and data or {}
 	vape:LoadOptions(self, data.Options)
-	self.Bind:Load(data.Bind)
+	self.Bind:Load(data.Bind or {})
 
 	if self.Enabled ~= (data.Enabled and not self.Bind.Hold) then
 		self:Toggle(true)
 	end
 
-	if self.Visible ~= data.Visible then
-		self:SetVisible(data.Visible, true)
+	local visible = data.Visible ~= false
+	if self.Visible ~= visible then
+		self:SetVisible(visible, true)
 	end
 end
 
