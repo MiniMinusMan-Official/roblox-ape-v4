@@ -37,7 +37,7 @@ arrow.Position = UDim2.new(1, -22, 0, 0)
 arrow.Text = '›'
 arrow.TextSize = 25
 arrow.Parent = button
-local window = Instance.new('Frame')
+local window = Instance.new('CanvasGroup')
 window.Name = optionsettings.Name..'ListWindow'
 window.Size = UDim2.fromOffset(420, 480)
 window.Position = UDim2.fromScale(0.5, 0.5)
@@ -46,7 +46,7 @@ window.BackgroundColor3 = Color3.fromRGB(252, 252, 252)
 window.BorderSizePixel = 0
 window.Visible = false
 window.ZIndex = 60
-window.Parent = clickgui
+window.Parent = modalBackdrop
 addCorner(window, UDim.new(0, 10))
 local title = Instance.new('TextLabel')
 title.Size = UDim2.new(1, -54, 0, 55)
@@ -173,8 +173,8 @@ end
 input.FocusLost:Connect(function(enter)
 	if enter and input.Text ~= '' then optionapi:ChangeValue(input.Text); input.Text = '' end
 end)
-button.MouseButton1Click:Connect(function() window.Visible = not window.Visible end)
-close.MouseButton1Click:Connect(function() window.Visible = false end)
+button.MouseButton1Click:Connect(function() mainapi:ShowJelloModal(window) end)
+close.MouseButton1Click:Connect(function() mainapi:HideJelloModal(window) end)
 refresh()
 optionapi.Object = button
 api.Options[optionsettings.Name] = optionapi
