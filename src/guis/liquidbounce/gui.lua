@@ -2073,7 +2073,7 @@ mainapi.Scale = clientsettings:CreateToggle({
 clientsettings:CreateDivider('Interface')
 clientsettings:CreateDropdown({
 	Name = 'GUI Theme',
-	List = {'LiquidBounce', 'New', 'Old', 'Rise'},
+	List = {'LiquidBounce', 'New', 'Old', 'Rise', 'Jello'},
 	Function = function(value, mouse)
 		if mouse then mainapi:Reinject(value) end
 	end

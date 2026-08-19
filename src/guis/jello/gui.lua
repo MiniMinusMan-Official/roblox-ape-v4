@@ -21,7 +21,7 @@ local mainapi = {
 	Scale = {Value = 1},
 	ToggleNotifications = {},
 	ThreadFix = setthreadidentity and true or false,
-	Version = '4.04',
+	Version = 'Jello 1.0',
 	Windows = {}
 }
 
@@ -52,33 +52,37 @@ local tween = {
 	tweenstwo = {}
 }
 local uipallet = {
-	Main = Color3.fromRGB(30, 30, 30),
-	Text = Color3.new(1, 1, 1),
+	Main = Color3.fromRGB(244, 244, 244),
+	Panel = Color3.fromRGB(250, 250, 250),
+	Text = Color3.fromRGB(42, 42, 42),
+	Muted = Color3.fromRGB(137, 137, 137),
+	Accent = Color3.fromRGB(0, 183, 234),
 	Font = Font.fromEnum(Enum.Font.Arial),
-	FontSemiBold = Font.fromEnum(Enum.Font.Arial, Enum.FontWeight.SemiBold),
-	Tween = TweenInfo.new(0.16, Enum.EasingStyle.Linear)
+	FontSemiBold = Font.fromEnum(Enum.Font.Arial, Enum.FontWeight.Medium),
+	Tween = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 }
 
 local getcustomassets = {
-	['newvape/assets/old/barlogo.png'] = 'rbxasset://barlogo.png',
-	['newvape/assets/old/blatanticon.png'] = 'rbxasset://blatanticon.png',
-	['newvape/assets/old/checkbox.png'] = 'rbxasset://checkbox.png',
-	['newvape/assets/old/combaticon.png'] = 'rbxasset://combaticon.png',
-	['newvape/assets/old/friendsicon.png'] = 'rbxasset://friendsicon.png',
-	['newvape/assets/old/guiicon.png'] = 'rbxasset://guiicon.png',
-	['newvape/assets/old/info.png'] = 'rbxasset://info.png',
-	['newvape/assets/old/pin.png'] = 'rbxasset://pin.png',
-	['newvape/assets/old/profilesicon.png'] = 'rbxasset://profilesicon.png',
-	['newvape/assets/old/rendericon.png'] = 'rbxasset://rendericon.png',
-	['newvape/assets/old/search.png'] = 'rbxasset://search.png',
-	['newvape/assets/old/settingsicon.png'] = 'rbxasset://settingsicon.png',
-	['newvape/assets/old/targetinfoicon.png'] = 'rbxasset://targetinfoicon.png',
-	['newvape/assets/old/textguiicon.png'] = 'rbxasset://textguiicon.png',
-	['newvape/assets/old/textv4.png'] = 'rbxasset://textv4.png',
-	['newvape/assets/old/textvape.png'] = 'rbxasset://textvape.png',
-	['newvape/assets/old/utilityicon.png'] = 'rbxasset://utilityicon.png',
-	['newvape/assets/old/vape.png'] = 'rbxassetid://14373395239',
-	['newvape/assets/old/worldicon.png'] = 'rbxasset://worldicon.png'
+	['newvape/assets/jello/barlogo.png'] = 'rbxasset://barlogo.png',
+	['newvape/assets/jello/blatanticon.png'] = 'rbxasset://blatanticon.png',
+	['newvape/assets/jello/checkbox.png'] = 'rbxasset://checkbox.png',
+	['newvape/assets/jello/combaticon.png'] = 'rbxasset://combaticon.png',
+	['newvape/assets/jello/friendsicon.png'] = 'rbxasset://friendsicon.png',
+	['newvape/assets/jello/guiicon.png'] = 'rbxasset://guiicon.png',
+	['newvape/assets/jello/info.png'] = 'rbxasset://info.png',
+	['newvape/assets/jello/pin.png'] = 'rbxasset://pin.png',
+	['newvape/assets/jello/profilesicon.png'] = 'rbxasset://profilesicon.png',
+	['newvape/assets/jello/rendericon.png'] = 'rbxasset://rendericon.png',
+	['newvape/assets/jello/search.png'] = 'rbxasset://search.png',
+	['newvape/assets/jello/settingsicon.png'] = 'rbxasset://settingsicon.png',
+	['newvape/assets/jello/targetinfoicon.png'] = 'rbxasset://targetinfoicon.png',
+	['newvape/assets/jello/textguiicon.png'] = 'rbxasset://textguiicon.png',
+	['newvape/assets/jello/textv4.png'] = 'rbxasset://textv4.png',
+	['newvape/assets/jello/textvape.png'] = 'rbxasset://textvape.png',
+	['newvape/assets/jello/utilityicon.png'] = 'rbxasset://utilityicon.png',
+	['newvape/assets/jello/vape.png'] = 'rbxassetid://14373395239',
+	['newvape/assets/jello/worldicon.png'] = 'rbxasset://worldicon.png',
+	['newvape/assets/jello/jelloregular.ttf'] = ''
 }
 
 local isfile = isfile or function(file)
@@ -230,7 +234,7 @@ local function downloadFile(path, func)
 		createDownloader(path)
 		local suc, res = pcall(function()
 			local remotePath = select(1, path:gsub('newvape/', ''))
-			remotePath = remotePath:gsub('^assets/old/', 'guis/old/assets/')
+			remotePath = remotePath:gsub('^assets/jello/', 'guis/jello/assets/')
 			local sourceRef = isfile('newvape/profiles/commit.txt') and readfile('newvape/profiles/commit.txt') or 'main'
 			return game:HttpGet('https://raw.githubusercontent.com/MiniMinusMan-Official/roblox-ape-v4/'..sourceRef..'/src/'..remotePath, true)
 		end)
@@ -251,6 +255,29 @@ getcustomasset = not inputService.TouchEnabled and assetfunction and function(pa
 	return mapped and assetfunction(mapped) or downloadFile(path, assetfunction)
 end or function(path)
 	return getcustomassets[path] or ''
+end
+
+local function loadJelloFont()
+	if not assetfunction then return end
+	local success = pcall(function()
+		local familyPath = 'newvape/assets/jello/jellofont.json'
+		writefile(familyPath, httpService:JSONEncode({
+			name = 'Helvetica Neue',
+			faces = {{
+				name = 'Regular',
+				weight = 400,
+				style = 'normal',
+				assetId = getcustomasset('newvape/assets/jello/jelloregular.ttf')
+			}}
+		}))
+		local family = getcustomasset(familyPath)
+		uipallet.Font = Font.new(family, Enum.FontWeight.Regular)
+		uipallet.FontSemiBold = Font.new(family, Enum.FontWeight.Medium)
+	end)
+	if not success then
+		uipallet.Font = Font.fromEnum(Enum.Font.Arial)
+		uipallet.FontSemiBold = Font.fromEnum(Enum.Font.Arial, Enum.FontWeight.Medium)
+	end
 end
 
 local function getTableSize(tab)
@@ -380,13 +407,9 @@ end
 do
 	local res = isfile('newvape/profiles/color.txt') and loadJson('newvape/profiles/color.txt')
 	if res then
-		uipallet.Main = res.Main and Color3.fromRGB(unpack(res.Main)) or uipallet.Main
-		uipallet.Text = res.Text and Color3.fromRGB(unpack(res.Text)) or uipallet.Text
-		uipallet.Font = res.Font and Font.new(
-			res.Font:find('rbxasset') and res.Font or string.format('rbxasset://fonts/families/%s.json', res.Font)
-		) or uipallet.Font
-		uipallet.FontSemiBold = Font.new(uipallet.Font.Family, Enum.FontWeight.SemiBold)
+		-- Jello keeps its original light palette and typeface independent of Vape themes.
 	end
+	loadJelloFont()
 	fontsize.Font = uipallet.Font
 end
 
@@ -537,110 +560,494 @@ addMaid(mainapi)
 function mainapi:CreateBar()
 	local categoryapi = {
 		Type = 'Category',
-		Expanded = false,
+		Expanded = true,
 		Options = {},
 		TopBar = true
 	}
 
 	local bar = Instance.new('Frame')
-	bar.Size = UDim2.fromOffset(180, 40)
-	bar.Position = UDim2.fromScale(0.5, 0)
-	bar.AnchorPoint = Vector2.new(0.5, 0)
-	bar.BackgroundColor3 = uipallet.Main
-	bar.BackgroundTransparency = 0.06
+	bar.Name = 'JelloBar'
+	bar.Size = UDim2.fromOffset(490, 62)
+	bar.Position = UDim2.fromOffset(8, 4)
+	bar.BackgroundTransparency = 1
 	bar.BorderSizePixel = 0
 	bar.Parent = clickgui
-	local logo = Instance.new('ImageLabel')
-	logo.Size = UDim2.fromOffset(92, 25)
-	logo.Position = UDim2.fromOffset(11, 8)
+
+	local logo = Instance.new('TextLabel')
+	logo.Size = UDim2.fromOffset(100, 38)
+	logo.Position = UDim2.fromOffset(0, 0)
 	logo.BackgroundTransparency = 1
-	logo.Image = getcustomasset('newvape/assets/old/barlogo.png')
-	logo.ImageColor3 = uipallet.Text
+	logo.Text = 'Sigma'
+	logo.TextXAlignment = Enum.TextXAlignment.Left
+	logo.TextColor3 = Color3.fromRGB(238, 238, 238)
+	logo.TextSize = 28
+	logo.FontFace = uipallet.Font
 	logo.Parent = bar
+	local sublogo = logo:Clone()
+	sublogo.Size = UDim2.fromOffset(80, 16)
+	sublogo.Position = UDim2.fromOffset(2, 31)
+	sublogo.Text = 'Jello'
+	sublogo.TextSize = 12
+	sublogo.TextColor3 = Color3.fromRGB(206, 206, 206)
+	sublogo.Parent = bar
+
 	local settingsbutton = Instance.new('TextButton')
-	settingsbutton.Size = UDim2.fromOffset(32, 32)
-	settingsbutton.Position = UDim2.fromOffset(108, 4)
-	settingsbutton.BackgroundColor3 = color.Dark(uipallet.Main, 0.1)
-	settingsbutton.BackgroundTransparency = 0.12
+	settingsbutton.Size = UDim2.fromOffset(94, 28)
+	settingsbutton.Position = UDim2.fromOffset(382, 9)
+	settingsbutton.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+	settingsbutton.BackgroundTransparency = 0.08
 	settingsbutton.BorderSizePixel = 0
-	settingsbutton.Text = ''
+	settingsbutton.Text = 'Settings'
+	settingsbutton.TextColor3 = uipallet.Text
+	settingsbutton.TextSize = 14
+	settingsbutton.FontFace = uipallet.Font
 	settingsbutton.AutoButtonColor = false
 	settingsbutton.Parent = bar
-	local settingsicon = Instance.new('ImageLabel')
-	settingsicon.Size = UDim2.fromOffset(26, 26)
-	settingsicon.Position = UDim2.fromOffset(4, 4)
-	settingsicon.BackgroundTransparency = 1
-	settingsicon.Image = getcustomasset('newvape/assets/old/settingsicon.png')
-	settingsicon.ImageColor3 = uipallet.Text
-	settingsicon.Parent = settingsbutton
-	local children = Instance.new('Frame')
-	children.Size = UDim2.fromOffset(181, 0)
-	children.Position = UDim2.new(0, 108, 1, 0)
-	children.BackgroundColor3 = color.Light(uipallet.Main, 0.05)
+	addCorner(settingsbutton, UDim.new(0, 3))
+
+	local children = Instance.new('ScrollingFrame')
+	children.Name = 'JelloSettings'
+	children.Size = UDim2.fromOffset(330, 560)
+	children.Position = UDim2.fromOffset(158, 44)
+	children.BackgroundColor3 = uipallet.Panel
 	children.BorderSizePixel = 0
 	children.Visible = false
+	children.ScrollBarThickness = 2
+	children.ScrollBarImageColor3 = uipallet.Accent
+	children.CanvasSize = UDim2.new()
 	children.Parent = bar
+	addCorner(children, UDim.new(0, 8))
 	local windowlist = Instance.new('UIListLayout')
 	windowlist.SortOrder = Enum.SortOrder.LayoutOrder
-	windowlist.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	windowlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	windowlist.Padding = UDim.new(0, 2)
 	windowlist.Parent = children
-	local searchbutton = settingsbutton:Clone()
-	searchbutton.Position = UDim2.fromOffset(144, 4)
-	searchbutton.Parent = bar
-	searchbutton.ImageLabel.Image = getcustomasset('newvape/assets/old/search.png')
+
+	local managerButton = settingsbutton:Clone()
+	managerButton.Name = 'KeybindManagerButton'
+	managerButton.Size = UDim2.fromOffset(148, 28)
+	managerButton.Position = UDim2.fromOffset(112, 9)
+	managerButton.Text = 'Keybind Manager'
+	managerButton.Parent = bar
+
+	local musicButton = settingsbutton:Clone()
+	musicButton.Name = 'JelloMusicButton'
+	musicButton.Size = UDim2.fromOffset(104, 28)
+	musicButton.Position = UDim2.fromOffset(270, 9)
+	musicButton.Text = 'Jello Music'
+	musicButton.Parent = bar
+
+	local function makePanel(name, size)
+		local panel = Instance.new('Frame')
+		panel.Name = name
+		panel.Size = size
+		panel.Position = UDim2.fromScale(0.5, 0.5)
+		panel.AnchorPoint = Vector2.new(0.5, 0.5)
+		panel.BackgroundColor3 = uipallet.Panel
+		panel.BorderSizePixel = 0
+		panel.Visible = false
+		panel.ZIndex = 20
+		panel.Parent = clickgui
+		addCorner(panel, UDim.new(0, 12))
+		table.insert(mainapi.Windows, panel)
+		return panel
+	end
+
+	local keyManager = makePanel('KeybindManager', UDim2.fromOffset(1110, 452))
+	local managerTitle = Instance.new('TextLabel')
+	managerTitle.Size = UDim2.new(1, -38, 0, 65)
+	managerTitle.Position = UDim2.fromOffset(22, 5)
+	managerTitle.BackgroundTransparency = 1
+	managerTitle.Text = 'Keybind Manager'
+	managerTitle.TextXAlignment = Enum.TextXAlignment.Left
+	managerTitle.TextColor3 = Color3.fromRGB(68, 68, 68)
+	managerTitle.TextSize = 35
+	managerTitle.FontFace = uipallet.Font
+	managerTitle.ZIndex = 21
+	managerTitle.Parent = keyManager
+	local managerClose = Instance.new('TextButton')
+	managerClose.Size = UDim2.fromOffset(42, 42)
+	managerClose.Position = UDim2.new(1, -52, 0, 12)
+	managerClose.BackgroundTransparency = 1
+	managerClose.Text = '×'
+	managerClose.TextColor3 = uipallet.Muted
+	managerClose.TextSize = 30
+	managerClose.FontFace = uipallet.Font
+	managerClose.ZIndex = 25
+	managerClose.Parent = keyManager
+
+	local keyboard = Instance.new('Frame')
+	keyboard.Size = UDim2.new(1, -40, 1, -82)
+	keyboard.Position = UDim2.fromOffset(20, 70)
+	keyboard.BackgroundTransparency = 1
+	keyboard.ZIndex = 21
+	keyboard.Parent = keyManager
+	local keyboardList = Instance.new('UIListLayout')
+	keyboardList.Padding = UDim.new(0, 7)
+	keyboardList.SortOrder = Enum.SortOrder.LayoutOrder
+	keyboardList.Parent = keyboard
+
+	local details
+	local selector
+	local keyboardRows = {
+		{{'Backquote', '`'}, {'One', '1'}, {'Two', '2'}, {'Three', '3'}, {'Four', '4'}, {'Five', '5'}, {'Six', '6'}, {'Seven', '7'}, {'Eight', '8'}, {'Nine', '9'}, {'Zero', '0'}, {'Minus', '-'}, {'Equals', '='}, {'Backspace', '←', 1.8}},
+		{{'Tab', 'Tab', 1.45}, {'Q', 'Q'}, {'W', 'W'}, {'E', 'E'}, {'R', 'R'}, {'T', 'T'}, {'Y', 'Y'}, {'U', 'U'}, {'I', 'I'}, {'O', 'O'}, {'P', 'P'}, {'LeftBracket', '['}, {'RightBracket', ']'}, {'BackSlash', '\\', 1.3}},
+		{{'CapsLock', 'Caps Lock', 1.75}, {'A', 'A'}, {'S', 'S'}, {'D', 'D'}, {'F', 'F'}, {'G', 'G'}, {'H', 'H'}, {'J', 'J'}, {'K', 'K'}, {'L', 'L'}, {'Semicolon', ';'}, {'Quote', "'"}, {'Return', '↵', 1.8}},
+		{{'LeftShift', 'Shift', 2.2}, {'Z', 'Z'}, {'X', 'X'}, {'C', 'C'}, {'V', 'V'}, {'B', 'B'}, {'N', 'N'}, {'M', 'M'}, {'Comma', ','}, {'Period', '.'}, {'Slash', '/'}, {'RightShift', 'Shift', 2.2}},
+		{{'LeftControl', 'Ctrl', 1.3}, {'LeftAlt', 'Alt', 1.3}, {'Space', '', 6.1}, {'RightAlt', 'Alt Gr', 1.4}, {'RightControl', 'Ctrl', 1.3}}
+	}
+
+	local function moduleUsesKey(module, key)
+		return table.find(bindKeys(module.Bind), key) ~= nil
+	end
+
+	local function openSelector(key, reopen)
+		if selector then selector:Destroy() end
+		selector = Instance.new('Frame')
+		selector.Name = 'ModuleSelector'
+		selector.Size = UDim2.fromOffset(500, 570)
+		selector.Position = UDim2.fromScale(0.5, 0.5)
+		selector.AnchorPoint = Vector2.new(0.5, 0.5)
+		selector.BackgroundColor3 = Color3.fromRGB(252, 252, 252)
+		selector.BorderSizePixel = 0
+		selector.ZIndex = 40
+		selector.Parent = keyManager
+		addCorner(selector, UDim.new(0, 10))
+		local title = Instance.new('TextLabel')
+		title.Size = UDim2.new(1, -40, 0, 62)
+		title.Position = UDim2.fromOffset(20, 8)
+		title.BackgroundTransparency = 1
+		title.Text = 'Select mod to bind'
+		title.TextXAlignment = Enum.TextXAlignment.Left
+		title.TextColor3 = uipallet.Text
+		title.TextSize = 34
+		title.FontFace = uipallet.Font
+		title.ZIndex = 41
+		title.Parent = selector
+		local search = Instance.new('TextBox')
+		search.Size = UDim2.new(1, -56, 0, 46)
+		search.Position = UDim2.fromOffset(28, 70)
+		search.BackgroundTransparency = 1
+		search.PlaceholderText = 'Search...'
+		search.PlaceholderColor3 = Color3.fromRGB(177, 177, 177)
+		search.Text = ''
+		search.TextColor3 = uipallet.Text
+		search.TextSize = 24
+		search.TextXAlignment = Enum.TextXAlignment.Left
+		search.FontFace = uipallet.Font
+		search.ClearTextOnFocus = false
+		search.ZIndex = 41
+		search.Parent = selector
+		local line = Instance.new('Frame')
+		line.Size = UDim2.new(1, -58, 0, 1)
+		line.Position = UDim2.fromOffset(29, 114)
+		line.BackgroundColor3 = Color3.fromRGB(172, 172, 172)
+		line.BorderSizePixel = 0
+		line.ZIndex = 41
+		line.Parent = selector
+		local list = Instance.new('ScrollingFrame')
+		list.Size = UDim2.new(1, -42, 1, -144)
+		list.Position = UDim2.fromOffset(21, 130)
+		list.BackgroundTransparency = 1
+		list.BorderSizePixel = 0
+		list.ScrollBarThickness = 2
+		list.ScrollBarImageColor3 = uipallet.Accent
+		list.CanvasSize = UDim2.new()
+		list.ZIndex = 41
+		list.Parent = selector
+		local layout = Instance.new('UIListLayout')
+		layout.SortOrder = Enum.SortOrder.Name
+		layout.Parent = list
+		local rows = {}
+		local function addChoice(name, callback)
+			local row = Instance.new('TextButton')
+			row.Name = name
+			row.Size = UDim2.new(1, -8, 0, 39)
+			row.BackgroundTransparency = 1
+			row.Text = name
+			row.TextColor3 = uipallet.Text
+			row.TextSize = 22
+			row.FontFace = uipallet.Font
+			row.ZIndex = 42
+			row.Parent = list
+			row.MouseButton1Click:Connect(function()
+				callback()
+				selector:Destroy()
+				selector = nil
+				reopen()
+			end)
+			table.insert(rows, row)
+		end
+		addChoice('Click GUI', function()
+			mainapi.Categories.TopBar.Options.Bind:SetBind({key})
+		end)
+		for name, module in mainapi.Modules do
+			if module.Category ~= 'GUI' then
+				addChoice(name, function() module:SetBind({key}) end)
+			end
+		end
+		layout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			list.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y)
+		end)
+		search:GetPropertyChangedSignal('Text'):Connect(function()
+			local query = search.Text:lower()
+			for _, row in rows do row.Visible = query == '' or row.Name:lower():find(query, 1, true) ~= nil end
+		end)
+	end
+
+	local function showKeyDetails(key, keyButton)
+		if details then details:Destroy() end
+		details = Instance.new('Frame')
+		details.Name = key..'Details'
+		details.Size = UDim2.fromOffset(270, 330)
+		local point = (keyButton.AbsolutePosition - keyManager.AbsolutePosition) / scale.Scale
+		details.Position = UDim2.fromOffset(math.clamp(point.X - 40, 12, 820), math.clamp(point.Y + 52, 75, 108))
+		details.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+		details.BorderSizePixel = 0
+		details.ZIndex = 30
+		details.Parent = keyManager
+		addCorner(details, UDim.new(0, 9))
+		local title = Instance.new('TextLabel')
+		title.Size = UDim2.new(1, -36, 0, 60)
+		title.Position = UDim2.fromOffset(18, 4)
+		title.BackgroundTransparency = 1
+		title.Text = keyButton.Text..' Key'
+		title.TextXAlignment = Enum.TextXAlignment.Left
+		title.TextColor3 = uipallet.Text
+		title.TextSize = 25
+		title.FontFace = uipallet.Font
+		title.ZIndex = 31
+		title.Parent = details
+		local divider = Instance.new('Frame')
+		divider.Size = UDim2.new(1, -36, 0, 1)
+		divider.Position = UDim2.fromOffset(18, 61)
+		divider.BackgroundColor3 = Color3.fromRGB(228, 228, 228)
+		divider.BorderSizePixel = 0
+		divider.ZIndex = 31
+		divider.Parent = details
+		local assigned = Instance.new('ScrollingFrame')
+		assigned.Size = UDim2.new(1, -28, 1, -120)
+		assigned.Position = UDim2.fromOffset(14, 72)
+		assigned.BackgroundTransparency = 1
+		assigned.BorderSizePixel = 0
+		assigned.ScrollBarThickness = 0
+		assigned.ZIndex = 31
+		assigned.Parent = details
+		local assignedLayout = Instance.new('UIListLayout')
+		assignedLayout.Parent = assigned
+		assignedLayout:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			assigned.CanvasSize = UDim2.fromOffset(0, assignedLayout.AbsoluteContentSize.Y)
+		end)
+		local function assignment(name, subtitle, remove)
+			local row = Instance.new('Frame')
+			row.Size = UDim2.new(1, 0, 0, 52)
+			row.BackgroundTransparency = 1
+			row.ZIndex = 32
+			row.Parent = assigned
+			local label = title:Clone()
+			label.Size = UDim2.new(1, -42, 0, 27)
+			label.Position = UDim2.fromOffset(3, 0)
+			label.Text = name
+			label.TextSize = 19
+			label.ZIndex = 33
+			label.Parent = row
+			local sub = label:Clone()
+			sub.Position = UDim2.fromOffset(3, 25)
+			sub.Text = subtitle or ''
+			sub.TextColor3 = uipallet.Muted
+			sub.TextSize = 12
+			sub.Parent = row
+			local removeButton = Instance.new('TextButton')
+			removeButton.Size = UDim2.fromOffset(20, 20)
+			removeButton.Position = UDim2.new(1, -27, 0, 9)
+			removeButton.BackgroundColor3 = Color3.fromRGB(255, 151, 151)
+			removeButton.Text = '−'
+			removeButton.TextColor3 = Color3.new(1, 1, 1)
+			removeButton.TextSize = 19
+			removeButton.FontFace = uipallet.FontSemiBold
+			removeButton.ZIndex = 34
+			removeButton.Parent = row
+			addCorner(removeButton, UDim.new(1, 0))
+			removeButton.MouseButton1Click:Connect(function()
+				remove()
+				showKeyDetails(key, keyButton)
+			end)
+		end
+		if table.find(bindKeys(mainapi.Keybind), key) then
+			assignment('Click GUI', 'Interface', function()
+				mainapi.Categories.TopBar.Options.Bind:SetBind({'RightShift'})
+			end)
+		end
+		for name, module in mainapi.Modules do
+			if moduleUsesKey(module, key) then
+				assignment(name, module.Category, function() module:SetBind({}) end)
+			end
+		end
+		local add = Instance.new('TextButton')
+		add.Size = UDim2.fromOffset(78, 43)
+		add.Position = UDim2.new(1, -92, 1, -52)
+		add.BackgroundTransparency = 1
+		add.Text = 'Add'
+		add.TextColor3 = Color3.fromRGB(54, 158, 218)
+		add.TextSize = 24
+		add.FontFace = uipallet.Font
+		add.ZIndex = 33
+		add.Parent = details
+		add.MouseButton1Click:Connect(function()
+			openSelector(key, function() showKeyDetails(key, keyButton) end)
+		end)
+	end
+
+	for rowIndex, rowData in keyboardRows do
+		local row = Instance.new('Frame')
+		row.Name = 'Row'..rowIndex
+		row.Size = UDim2.new(1, 0, 0, 62)
+		row.BackgroundTransparency = 1
+		row.LayoutOrder = rowIndex
+		row.ZIndex = 21
+		row.Parent = keyboard
+		local rowList = Instance.new('UIListLayout')
+		rowList.FillDirection = Enum.FillDirection.Horizontal
+		rowList.Padding = UDim.new(0, 7)
+		rowList.Parent = row
+		for _, data in rowData do
+			local keyButton = Instance.new('TextButton')
+			keyButton.Name = data[1]
+			keyButton.Size = UDim2.fromOffset(60 * (data[3] or 1), 60)
+			keyButton.BackgroundColor3 = Color3.fromRGB(238, 238, 238)
+			keyButton.BorderSizePixel = 0
+			keyButton.AutoButtonColor = false
+			keyButton.Text = data[2]
+			keyButton.TextColor3 = Color3.fromRGB(119, 119, 119)
+			keyButton.TextSize = 19
+			keyButton.FontFace = uipallet.Font
+			keyButton.ZIndex = 22
+			keyButton.Parent = row
+			addCorner(keyButton, UDim.new(0, 7))
+			local shadow = Instance.new('UIStroke')
+			shadow.Color = Color3.fromRGB(218, 218, 218)
+			shadow.Thickness = 1
+			shadow.Transparency = 0.35
+			shadow.Parent = keyButton
+			keyButton.MouseButton1Click:Connect(function() showKeyDetails(data[1], keyButton) end)
+		end
+	end
+
+	local music = makePanel('JelloMusic', UDim2.fromOffset(390, 315))
+	music.BackgroundColor3 = Color3.fromRGB(20, 21, 26)
+	local musicTitle = managerTitle:Clone()
+	musicTitle.Size = UDim2.new(1, -40, 0, 56)
+	musicTitle.Position = UDim2.fromOffset(20, 5)
+	musicTitle.Text = 'Jello'
+	musicTitle.TextColor3 = Color3.new(1, 1, 1)
+	musicTitle.TextSize = 28
+	musicTitle.Parent = music
+	local musicSmall = musicTitle:Clone()
+	musicSmall.Position = UDim2.fromOffset(89, 20)
+	musicSmall.Text = 'Music'
+	musicSmall.TextSize = 13
+	musicSmall.TextColor3 = Color3.fromRGB(205, 205, 205)
+	musicSmall.Parent = music
+	local musicClose = managerClose:Clone()
+	musicClose.TextColor3 = Color3.fromRGB(190, 190, 195)
+	musicClose.Parent = music
+	local trackName = musicTitle:Clone()
+	trackName.Size = UDim2.new(1, -40, 0, 32)
+	trackName.Position = UDim2.fromOffset(20, 72)
+	trackName.Text = 'No track loaded'
+	trackName.TextSize = 18
+	trackName.Parent = music
+	local assetBox = Instance.new('TextBox')
+	assetBox.Size = UDim2.new(1, -40, 0, 44)
+	assetBox.Position = UDim2.fromOffset(20, 120)
+	assetBox.BackgroundColor3 = Color3.fromRGB(35, 36, 43)
+	assetBox.BorderSizePixel = 0
+	assetBox.PlaceholderText = 'Roblox audio asset ID'
+	assetBox.PlaceholderColor3 = Color3.fromRGB(135, 135, 140)
+	assetBox.Text = ''
+	assetBox.TextColor3 = Color3.new(1, 1, 1)
+	assetBox.TextSize = 17
+	assetBox.FontFace = uipallet.Font
+	assetBox.ClearTextOnFocus = false
+	assetBox.ZIndex = 22
+	assetBox.Parent = music
+	addCorner(assetBox, UDim.new(0, 4))
+	local sound = Instance.new('Sound')
+	sound.Name = 'JelloMusicPlayer'
+	sound.Volume = 0.5
+	sound.Parent = gui
+	local play = Instance.new('TextButton')
+	play.Size = UDim2.fromOffset(74, 52)
+	play.Position = UDim2.new(0.5, -37, 0, 184)
+	play.BackgroundTransparency = 1
+	play.Text = '▶'
+	play.TextColor3 = Color3.new(1, 1, 1)
+	play.TextSize = 29
+	play.FontFace = uipallet.Font
+	play.ZIndex = 22
+	play.Parent = music
+	local volume = Instance.new('TextButton')
+	volume.Size = UDim2.new(1, -60, 0, 20)
+	volume.Position = UDim2.fromOffset(30, 264)
+	volume.BackgroundColor3 = Color3.fromRGB(72, 72, 80)
+	volume.BorderSizePixel = 0
+	volume.Text = ''
+	volume.ZIndex = 22
+	volume.Parent = music
+	addCorner(volume, UDim.new(1, 0))
+	local volumeFill = Instance.new('Frame')
+	volumeFill.Size = UDim2.fromScale(0.5, 1)
+	volumeFill.BackgroundColor3 = Color3.fromRGB(207, 43, 100)
+	volumeFill.BorderSizePixel = 0
+	volumeFill.ZIndex = 23
+	volumeFill.Parent = volume
+	addCorner(volumeFill, UDim.new(1, 0))
+	local function setVolume(input)
+		local value = math.clamp((input.Position.X - volume.AbsolutePosition.X) / volume.AbsoluteSize.X, 0, 1)
+		sound.Volume = value
+		volumeFill.Size = UDim2.fromScale(value, 1)
+	end
+	volume.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then setVolume(input) end
+	end)
+	play.MouseButton1Click:Connect(function()
+		if sound.Playing then
+			sound:Pause()
+			play.Text = '▶'
+			return
+		end
+		local id = assetBox.Text:match('%d+')
+		if id then
+			sound.SoundId = 'rbxassetid://'..id
+			trackName.Text = 'Asset '..id
+		end
+		if sound.SoundId ~= '' then
+			sound:Play()
+			play.Text = 'Ⅱ'
+		end
+	end)
+
+	managerButton.MouseButton1Click:Connect(function()
+		keyManager.Visible = not keyManager.Visible
+		music.Visible = false
+	end)
+	musicButton.MouseButton1Click:Connect(function()
+		music.Visible = not music.Visible
+		keyManager.Visible = false
+	end)
+	managerClose.MouseButton1Click:Connect(function() keyManager.Visible = false end)
+	musicClose.MouseButton1Click:Connect(function() music.Visible = false end)
 
 	function categoryapi:CreateBind()
-		local optionapi = {}
-
-		local button = Instance.new('TextButton')
-		button.Size = UDim2.new(1, 0, 0, 24)
-		button.BackgroundColor3 = color.Dark(children.BackgroundColor3, 0.05)
-		button.BackgroundTransparency = 1
-		button.BorderSizePixel = 0
-		button.AutoButtonColor = false
-		button.Visible = true
-		button.Text = ''
-		button.Parent = children
-		addTooltip(button, 'Shift click any module to bind it to a key.')
-		local buttonbkg = Instance.new('Frame')
-		buttonbkg.Size = UDim2.new(1, -8, 0, 20)
-		buttonbkg.Position = UDim2.fromOffset(4, 2)
-		buttonbkg.BackgroundColor3 = color.Light(uipallet.Main, 0.1)
-		buttonbkg.BorderSizePixel = 0
-		buttonbkg.Parent = button
-		local buttontext = Instance.new('TextLabel')
-		buttontext.Size = UDim2.fromScale(1, 1)
-		buttontext.BackgroundTransparency = 1
-		buttontext.Text = 'Rebind GUI'
-		buttontext.TextColor3 = uipallet.Text
-		buttontext.TextSize = 16
-		buttontext.FontFace = uipallet.Font
-		buttontext.Parent = buttonbkg
+		local optionapi = {Bind = mainapi.Keybind}
 
 		function optionapi:SetBind(tab, mouse)
 			tab = bindKeys(tab)
 			mainapi.Keybind = #tab <= 0 and bindKeys(mainapi.Keybind, {'RightShift'}) or tab
 			self.Bind = mainapi.Keybind
-			if mainapi.VapeButton then
-				mainapi.VapeButton:Destroy()
-				mainapi.VapeButton = nil
-			end
-
-			if mouse then
-				buttontext.Text = 'Bound to '..table.concat(mainapi.Keybind, ' + '):upper()
-				task.delay(1, function()
-					buttontext.Text = 'Rebind GUI'
-				end)
-			end
 		end
 
-		button.MouseButton1Click:Connect(function()
-			mainapi.Binding = optionapi
-			buttontext.Text = 'Press a key'
-		end)
-
 		categoryapi.Options.Bind = optionapi
-
 		return optionapi
 	end
 
@@ -654,10 +1061,7 @@ function mainapi:CreateBar()
 		children.Visible = not children.Visible
 	end)
 	windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
-		if self.ThreadFix then
-			setthreadidentity(8)
-		end
-		children.Size = UDim2.fromOffset(181, math.min(windowlist.AbsoluteContentSize.Y / scale.Scale, 600))
+		children.CanvasSize = UDim2.fromOffset(0, windowlist.AbsoluteContentSize.Y / scale.Scale + 12)
 	end)
 
 	categoryapi.Object = bar
@@ -678,12 +1082,13 @@ function mainapi:CreateCategory(categorysettings)
 	window.Size = UDim2.fromOffset(categorysettings.WindowSize or 160, 40)
 	window.Position = UDim2.fromOffset(categorysettings.Name == 'GUI' and 4 or 174, 68)
 	window.BackgroundColor3 = uipallet.Main
-	window.BackgroundTransparency = 0.06
+	window.BackgroundTransparency = 0
 	window.BorderSizePixel = 0
 	window.AutoButtonColor = false
 	window.Visible = categorysettings.Name == 'GUI'
 	window.Text = ''
 	window.Parent = clickgui
+	addCorner(window, UDim.new(0, 6))
 	makeDraggable(window)
 	local iconshadow = Instance.new('ImageLabel')
 	iconshadow.Name = 'Icon'
@@ -691,19 +1096,22 @@ function mainapi:CreateCategory(categorysettings)
 	iconshadow.Position = UDim2.fromOffset(7, 7)
 	iconshadow.BackgroundTransparency = 1
 	iconshadow.Image = categorysettings.Icon
-	iconshadow.ImageColor3 = Color3.new()
-	iconshadow.ImageTransparency = 0.5
+	iconshadow.ImageColor3 = uipallet.Accent
+	iconshadow.ImageTransparency = 0
 	iconshadow.Parent = window
 	local icon = iconshadow:Clone()
 	icon.Position = UDim2.fromOffset(6, 6)
 	icon.ImageColor3 = uipallet.Text
 	icon.ImageTransparency = 0
+	icon.Visible = false
 	icon.Parent = window
 	local title = Instance.new('TextLabel')
 	title.Name = 'Title'
-	title.Size = UDim2.fromScale(1, 1)
+	title.Size = UDim2.new(1, -70, 1, 0)
+	title.Position = UDim2.fromOffset(39, 0)
 	title.BackgroundTransparency = 1
 	title.Text = categorysettings.Name
+	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.TextColor3 = uipallet.Text
 	title.TextSize = 17
 	title.FontFace = uipallet.Font
@@ -1331,7 +1739,7 @@ function mainapi:CreateOverlay(categorysettings)
 	pin.Position = UDim2.new(1, -23, 0, 11)
 	pin.BackgroundTransparency = 1
 	pin.AutoButtonColor = false
-	pin.Image = getcustomasset('newvape/assets/old/pin.png')
+	pin.Image = getcustomasset('newvape/assets/jello/pin.png')
 	pin.ImageColor3 = color.Dark(uipallet.Text, 0.43)
 	pin.Parent = window
 	local customchildren = Instance.new('Frame')
@@ -1465,6 +1873,7 @@ function mainapi:CreateCategoryList(categorysettings)
 	children.ScrollBarImageTransparency = 0.75
 	children.CanvasSize = UDim2.new()
 	children.Parent = window
+	addCorner(children, UDim.new(0, 6))
 	local childrentwo = Instance.new('Frame')
 	childrentwo.BackgroundTransparency = 1
 	childrentwo.BackgroundColor3 = window.BackgroundColor3
@@ -1488,9 +1897,10 @@ function mainapi:CreateCategoryList(categorysettings)
 	local addbox = addbkg:Clone()
 	addbox.Size = UDim2.new(1, -50, 1, -8)
 	addbox.Position = UDim2.fromOffset(4, 4)
-	addbox.BackgroundColor3 = color.Dark(uipallet.Main, 0.14)
+	addbox.BackgroundColor3 = Color3.fromRGB(238, 238, 238)
 	addbox.BackgroundTransparency = 0
 	addbox.Parent = addbkg
+	addCorner(addbox, UDim.new(0, 4))
 	local addvalue = Instance.new('TextBox')
 	addvalue.Size = UDim2.new(1, -35, 1, 0)
 	addvalue.Position = UDim2.fromOffset(10, 0)
@@ -1498,11 +1908,12 @@ function mainapi:CreateCategoryList(categorysettings)
 	addvalue.Text = ''
 	addvalue.PlaceholderText = categorysettings.Placeholder or 'Add entry...'
 	addvalue.TextXAlignment = Enum.TextXAlignment.Left
-	addvalue.TextColor3 = Color3.new(1, 1, 1)
+	addvalue.PlaceholderColor3 = uipallet.Muted
+	addvalue.TextColor3 = uipallet.Text
 	addvalue.TextSize = 15
 	addvalue.FontFace = uipallet.Font
 	addvalue.ClearTextOnFocus = false
-	addvalue.Parent = addbkg
+	addvalue.Parent = addbox
 	local addbutton = Instance.new('TextButton')
 	addbutton.Name = 'AddButton'
 	addbutton.Size = UDim2.new(0, 44, 1, -8)
@@ -1564,7 +1975,7 @@ function mainapi:CreateCategoryList(categorysettings)
 				objectbkg.Name = 'BKG'
 				objectbkg.Size = UDim2.new(1, -30, 1, 0)
 				objectbkg.Position = UDim2.fromOffset(4, 0)
-				objectbkg.BackgroundColor3 = color.Dark(uipallet.Main, 0.05)
+				objectbkg.BackgroundColor3 = Color3.fromRGB(247, 247, 247)
 				objectbkg.BorderSizePixel = 0
 				objectbkg.Visible = true
 				objectbkg.Parent = object
@@ -1636,7 +2047,7 @@ function mainapi:CreateCategoryList(categorysettings)
 				objectbkg.Name = 'BKG'
 				objectbkg.Size = UDim2.new(1, -30, 1, 0)
 				objectbkg.Position = UDim2.fromOffset(4, 0)
-				objectbkg.BackgroundColor3 = color.Dark(uipallet.Main, 0.05)
+				objectbkg.BackgroundColor3 = Color3.fromRGB(247, 247, 247)
 				objectbkg.BorderSizePixel = 0
 				objectbkg.Visible = true
 				objectbkg.Parent = object
@@ -1644,14 +2055,15 @@ function mainapi:CreateCategoryList(categorysettings)
 				objectdot.Name = 'Dot'
 				objectdot.Size = UDim2.fromOffset(16, 16)
 				objectdot.Position = UDim2.fromOffset(8, 4)
-				objectdot.BackgroundColor3 = color.Dark(uipallet.Main, 0.1)
+				objectdot.BackgroundColor3 = enabled and uipallet.Accent or Color3.fromRGB(211, 211, 211)
 				objectdot.BorderSizePixel = 0
 				objectdot.Parent = object
 				local objectdotin = Instance.new('ImageLabel')
 				objectdotin.Size = UDim2.fromScale(1, 1)
 				objectdotin.BackgroundTransparency = 1
-				objectdotin.Image = getcustomasset('newvape/assets/old/checkbox.png')
+				objectdotin.Image = getcustomasset('newvape/assets/jello/checkbox.png')
 				objectdotin.ImageColor3 = uipallet.Text
+				objectdotin.Visible = enabled and true or false
 				objectdotin.Parent = objectdot
 				local objecttitle = Instance.new('TextLabel')
 				objecttitle.Name = 'Title'
@@ -1687,9 +2099,11 @@ function mainapi:CreateCategoryList(categorysettings)
 					if ind then
 						table.remove(self.ListEnabled, ind)
 						objectdotin.Visible = false
+						objectdot.BackgroundColor3 = Color3.fromRGB(211, 211, 211)
 					else
 						table.insert(self.ListEnabled, v)
 						objectdotin.Visible = true
+						objectdot.BackgroundColor3 = uipallet.Accent
 					end
 					categorysettings.Function()
 				end)
@@ -1789,7 +2203,7 @@ function mainapi:CreateNotification(title, text, duration, type)
 		iconshadow.Position = UDim2.fromOffset(1, 3)
 		iconshadow.ZIndex = 5
 		iconshadow.BackgroundTransparency = 1
-		iconshadow.Image = getcustomasset('newvape/assets/old/info.png')
+		iconshadow.Image = getcustomasset('newvape/assets/jello/info.png')
 		iconshadow.ImageColor3 = Color3.new()
 		iconshadow.ImageTransparency = 0.5
 		iconshadow.Parent = notification
@@ -1883,15 +2297,13 @@ function mainapi:Load(skipgui, profile)
 				if object.Options and v.Options then
 					self:LoadOptions(object, v.Options)
 				end
-				if v.Enabled then
+				if object.Button and v.Enabled ~= nil and v.Enabled ~= object.Button.Enabled then
 					object.Button:Toggle()
 				end
 				if v.Pinned then
 					object:Pin()
 				end
-				if v.Expanded then
-					object:Expand()
-				end
+				if v.Expanded ~= nil and v.Expanded ~= object.Expanded then object:Expand() end
 				if v.List and (#object.List > 0 or #v.List > 0) then
 					object.List = v.List or {}
 					object.ListEnabled = v.ListEnabled or {}
@@ -2007,7 +2419,7 @@ function mainapi:Load(skipgui, profile)
 		image.Size = UDim2.fromOffset(26, 26)
 		image.Position = UDim2.fromOffset(3, 3)
 		image.BackgroundTransparency = 1
-		image.Image = getcustomasset('newvape/assets/old/vape.png')
+		image.Image = getcustomasset('newvape/assets/jello/vape.png')
 		image.Parent = button
 		self.VapeButton = button
 		button.MouseButton1Click:Connect(function()
@@ -2155,6 +2567,292 @@ function mainapi:Uninject()
 	shared.VapeIndependent = nil
 end
 
+-- Jello uses compact category cards and a separate right-click settings sheet.
+-- These implementations replace the inherited legacy window builders while
+-- retaining the same public module/component API used by universal modules.
+local function createJelloCategory(api, categorysettings, legit)
+	local categoryapi = {
+		Type = 'Category',
+		Expanded = true,
+		Options = {},
+		Modules = legit and {} or nil
+	}
+	local moduleStore = legit and categoryapi.Modules or api.Modules
+	local isMain = categorysettings.Name == 'GUI'
+	local index = 0
+	for name, category in api.Categories do
+		if name ~= 'Main' and name ~= 'TopBar' and category.Type == 'Category' then index += 1 end
+	end
+
+	local window = Instance.new('TextButton')
+	window.Name = categorysettings.Name..'Category'
+	window.Size = UDim2.fromOffset(isMain and 116 or 142, 27)
+	window.Position = isMain and UDim2.fromOffset(8, 72)
+		or UDim2.fromOffset(140 + ((index % 4) * 148), 106 + (math.floor(index / 4) * 236))
+	window.BackgroundColor3 = isMain and Color3.fromRGB(20, 20, 22) or uipallet.Panel
+	window.BackgroundTransparency = isMain and 0.48 or 0.05
+	window.BorderSizePixel = 0
+	window.AutoButtonColor = false
+	window.Visible = true
+	window.Text = ''
+	window.ClipsDescendants = false
+	window.Parent = clickgui
+	makeDraggable(window)
+	if not isMain then addCorner(window, UDim.new(0, 2)) end
+
+	local title = Instance.new('TextLabel')
+	title.Name = 'Title'
+	title.Size = UDim2.new(1, -16, 1, 0)
+	title.Position = UDim2.fromOffset(8, 0)
+	title.BackgroundTransparency = 1
+	title.Text = isMain and 'Categories' or categorysettings.Name
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.TextColor3 = isMain and Color3.fromRGB(224, 224, 224) or uipallet.Text
+	title.TextSize = isMain and 12 or 14
+	title.FontFace = uipallet.Font
+	title.Parent = window
+
+	local children = Instance.new('ScrollingFrame')
+	children.Name = 'Children'
+	children.Size = UDim2.new(1, 0, 0, 0)
+	children.Position = UDim2.fromOffset(0, 27)
+	children.BackgroundColor3 = isMain and Color3.fromRGB(18, 18, 20) or uipallet.Panel
+	children.BackgroundTransparency = isMain and 0.5 or 0.05
+	children.BorderSizePixel = 0
+	children.Visible = true
+	children.ScrollBarThickness = 0
+	children.CanvasSize = UDim2.new()
+	children.Parent = window
+	if not isMain then addCorner(children, UDim.new(0, 2)) end
+	local windowlist = Instance.new('UIListLayout')
+	windowlist.SortOrder = Enum.SortOrder.LayoutOrder
+	windowlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	windowlist.Parent = children
+
+	local function createModule(modulesettings)
+		api:Remove(modulesettings.Name)
+		local moduleapi = {
+			Enabled = false,
+			Options = {},
+			Bind = {},
+			Index = modulesettings.Index or getTableSize(moduleStore),
+			ExtraText = modulesettings.ExtraText,
+			Name = modulesettings.Name,
+			Category = categorysettings.Name
+		}
+		modulesettings.Function = modulesettings.Function or function() end
+		addMaid(moduleapi)
+
+		local modulebutton = Instance.new('TextButton')
+		modulebutton.Name = modulesettings.Name
+		modulebutton.Size = UDim2.new(1, 0, 0, isMain and 25 or 22)
+		modulebutton.BackgroundColor3 = isMain and Color3.fromRGB(28, 28, 31) or uipallet.Panel
+		modulebutton.BackgroundTransparency = isMain and 0.48 or 0
+		modulebutton.BorderSizePixel = 0
+		modulebutton.AutoButtonColor = false
+		modulebutton.Text = '  '..modulesettings.Name
+		modulebutton.TextXAlignment = Enum.TextXAlignment.Left
+		modulebutton.TextColor3 = isMain and Color3.fromRGB(219, 219, 219) or Color3.fromRGB(75, 75, 75)
+		modulebutton.TextSize = isMain and 12 or 12
+		modulebutton.FontFace = uipallet.Font
+		modulebutton.Parent = children
+		local gradient = Instance.new('UIGradient')
+		gradient.Enabled = false
+		gradient.Parent = modulebutton
+		local accent = Instance.new('Frame')
+		accent.Name = 'Accent'
+		accent.Size = UDim2.new(1, 0, 0, isMain and 2 or 4)
+		accent.Position = UDim2.new(0, 0, 1, isMain and -2 or -4)
+		accent.BackgroundColor3 = uipallet.Accent
+		accent.BorderSizePixel = 0
+		accent.Visible = false
+		accent.Parent = modulebutton
+		local dots = Instance.new('Frame')
+		dots.Name = 'Dots'
+		dots.Size = UDim2.fromOffset(1, 1)
+		dots.BackgroundTransparency = 1
+		dots.Visible = false
+		dots.Parent = modulebutton
+
+		local settingswindow = Instance.new('Frame')
+		settingswindow.Name = modulesettings.Name..'Settings'
+		settingswindow.Size = UDim2.fromOffset(520, 620)
+		settingswindow.Position = UDim2.fromScale(0.5, 0.5)
+		settingswindow.AnchorPoint = Vector2.new(0.5, 0.5)
+		settingswindow.BackgroundColor3 = Color3.fromRGB(252, 252, 252)
+		settingswindow.BorderSizePixel = 0
+		settingswindow.Visible = false
+		settingswindow.ZIndex = 50
+		settingswindow.Parent = clickgui
+		addCorner(settingswindow, UDim.new(0, 10))
+		local stroke = Instance.new('UIStroke')
+		stroke.Color = Color3.fromRGB(218, 218, 218)
+		stroke.Thickness = 1
+		stroke.Transparency = 0.35
+		stroke.Parent = settingswindow
+		local settingsTitle = Instance.new('TextLabel')
+		settingsTitle.Size = UDim2.new(1, -70, 0, 52)
+		settingsTitle.Position = UDim2.fromOffset(28, 13)
+		settingsTitle.BackgroundTransparency = 1
+		settingsTitle.Text = modulesettings.Name
+		settingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+		settingsTitle.TextColor3 = Color3.fromRGB(33, 33, 33)
+		settingsTitle.TextSize = 34
+		settingsTitle.FontFace = uipallet.Font
+		settingsTitle.ZIndex = 51
+		settingsTitle.Parent = settingswindow
+		local description = settingsTitle:Clone()
+		description.Size = UDim2.new(1, -58, 0, 28)
+		description.Position = UDim2.fromOffset(30, 63)
+		description.Text = modulesettings.Tooltip or 'Configure '..modulesettings.Name
+		description.TextColor3 = uipallet.Muted
+		description.TextSize = 16
+		description.TextWrapped = true
+		description.Parent = settingswindow
+		local close = Instance.new('TextButton')
+		close.Size = UDim2.fromOffset(42, 42)
+		close.Position = UDim2.new(1, -53, 0, 14)
+		close.BackgroundTransparency = 1
+		close.Text = '×'
+		close.TextColor3 = uipallet.Muted
+		close.TextSize = 30
+		close.FontFace = uipallet.Font
+		close.ZIndex = 53
+		close.Parent = settingswindow
+		local settingschildren = Instance.new('ScrollingFrame')
+		settingschildren.Name = 'Children'
+		settingschildren.Size = UDim2.new(1, -44, 1, -116)
+		settingschildren.Position = UDim2.fromOffset(22, 102)
+		settingschildren.BackgroundTransparency = 1
+		settingschildren.BorderSizePixel = 0
+		settingschildren.ScrollBarThickness = 2
+		settingschildren.ScrollBarImageColor3 = uipallet.Accent
+		settingschildren.CanvasSize = UDim2.new()
+		settingschildren.ZIndex = 51
+		settingschildren.Parent = settingswindow
+		local settingslist = Instance.new('UIListLayout')
+		settingslist.SortOrder = Enum.SortOrder.LayoutOrder
+		settingslist.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		settingslist.Padding = UDim.new(0, 2)
+		settingslist.Parent = settingschildren
+		moduleapi.Children = settingschildren
+		moduleapi.Settings = settingswindow
+
+		function moduleapi:SetBind(value, mouse)
+			value = type(value) == 'table' and value or {}
+			local mobile = type(value.Mobile) == 'table' and value.Mobile or value.Mobile == true and value
+			if mobile and type(mobile.X) == 'number' and type(mobile.Y) == 'number' then
+				createMobileButton(moduleapi, Vector2.new(mobile.X, mobile.Y))
+				return
+			end
+			self.Bind = bindKeys(value)
+		end
+
+		function moduleapi:Toggle(multiple)
+			if api.ThreadFix then setthreadidentity(8) end
+			self.Enabled = not self.Enabled
+			accent.Visible = self.Enabled
+			modulebutton.TextColor3 = isMain and Color3.fromRGB(232, 232, 232) or Color3.fromRGB(52, 52, 52)
+			if not self.Enabled then
+				for _, connection in self.Connections do pcall(function() connection:Disconnect() end) end
+				table.clear(self.Connections)
+			end
+			if not multiple then api:UpdateTextGUI() end
+			task.spawn(modulesettings.Function, self.Enabled)
+		end
+
+		for componentName, component in components do
+			moduleapi['Create'..componentName] = function(_, optionsettings)
+				return component(optionsettings, settingschildren, moduleapi)
+			end
+		end
+
+		local function toggleSettings()
+			if modulesettings.Special then return end
+			if api.ActiveSettings and api.ActiveSettings ~= settingswindow then api.ActiveSettings.Visible = false end
+			settingswindow.Visible = not settingswindow.Visible
+			api.ActiveSettings = settingswindow.Visible and settingswindow or nil
+		end
+		close.MouseButton1Click:Connect(function()
+			settingswindow.Visible = false
+			if api.ActiveSettings == settingswindow then api.ActiveSettings = nil end
+		end)
+		modulebutton.MouseButton1Click:Connect(function() moduleapi:Toggle() end)
+		modulebutton.MouseButton2Click:Connect(toggleSettings)
+		modulebutton.MouseEnter:Connect(function()
+			if not moduleapi.Enabled then modulebutton.BackgroundColor3 = isMain and Color3.fromRGB(36, 36, 40) or Color3.fromRGB(239, 239, 239) end
+		end)
+		modulebutton.MouseLeave:Connect(function()
+			modulebutton.BackgroundColor3 = isMain and Color3.fromRGB(28, 28, 31) or uipallet.Panel
+		end)
+		settingslist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			settingschildren.CanvasSize = UDim2.fromOffset(0, settingslist.AbsoluteContentSize.Y / scale.Scale + 10)
+		end)
+
+		moduleapi.Object = modulebutton
+		moduleStore[modulesettings.Name] = moduleapi
+		local names = {}
+		for name, object in moduleStore do
+			if object.Category == categorysettings.Name then table.insert(names, name) end
+		end
+		table.sort(names)
+		for order, name in names do
+			moduleStore[name].Index = order
+			moduleStore[name].Object.LayoutOrder = order
+		end
+		return moduleapi
+	end
+
+	categoryapi.CreateModule = function(_, settings) return createModule(settings) end
+	for componentName, component in components do
+		categoryapi['Create'..componentName] = function(_, settings)
+			return component(settings, children, categoryapi)
+		end
+	end
+	function categoryapi:Expand(force)
+		self.Expanded = force == nil and not self.Expanded or force
+		children.Visible = self.Expanded
+	end
+	window.MouseButton2Click:Connect(function() categoryapi:Expand() end)
+	windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		local height = math.min(windowlist.AbsoluteContentSize.Y / scale.Scale, isMain and 410 or 205)
+		children.CanvasSize = UDim2.fromOffset(0, windowlist.AbsoluteContentSize.Y / scale.Scale)
+		children.Size = UDim2.new(1, 0, 0, height)
+	end)
+	categoryapi.Object = window
+	return categoryapi
+end
+
+mainapi.CreateCategory = function(self, categorysettings)
+	local categoryapi = createJelloCategory(self, categorysettings, false)
+	if categorysettings.Name == 'GUI' then
+		self.Categories.Main = categoryapi
+	else
+		categoryapi.Button = self.Categories.Main:CreateModule({
+			Name = categorysettings.Name,
+			Special = true,
+			Function = function(enabled) categoryapi.Object.Visible = enabled end
+		})
+		categoryapi.Button.Enabled = true
+		categoryapi.Button.Object.Accent.Visible = true
+		self.Categories[categorysettings.Name] = categoryapi
+	end
+	return categoryapi
+end
+
+mainapi.CreateLegit = function(self, categorysettings)
+	local categoryapi = createJelloCategory(self, categorysettings, true)
+	categoryapi.Button = self.Categories.Main:CreateModule({
+		Name = categorysettings.Name,
+		Special = true,
+		Function = function(enabled) categoryapi.Object.Visible = enabled end
+	})
+	categoryapi.Button.Enabled = true
+	categoryapi.Button.Object.Accent.Visible = true
+	self.Categories[categorysettings.Name] = categoryapi
+	return categoryapi
+end
+
 gui = Instance.new('ScreenGui')
 gui.Name = randomString()
 gui.DisplayOrder = 9999999
@@ -2179,6 +2877,37 @@ clickgui.Size = UDim2.fromScale(1, 1)
 clickgui.BackgroundTransparency = 1
 clickgui.Visible = false
 clickgui.Parent = scaledgui
+local jelloBackdrop = Instance.new('Frame')
+jelloBackdrop.Name = 'Backdrop'
+jelloBackdrop.Size = UDim2.fromScale(1, 1)
+jelloBackdrop.BackgroundColor3 = Color3.fromRGB(8, 13, 18)
+jelloBackdrop.BackgroundTransparency = 0.48
+jelloBackdrop.BorderSizePixel = 0
+jelloBackdrop.ZIndex = 0
+jelloBackdrop.Parent = clickgui
+local backdropGradient = Instance.new('UIGradient')
+backdropGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 66, 83)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(17, 23, 31)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(46, 28, 49))
+})
+backdropGradient.Transparency = NumberSequence.new({
+	NumberSequenceKeypoint.new(0, 0.36),
+	NumberSequenceKeypoint.new(0.5, 0.62),
+	NumberSequenceKeypoint.new(1, 0.4)
+})
+backdropGradient.Parent = jelloBackdrop
+local compass = Instance.new('TextLabel')
+compass.Name = 'Compass'
+compass.Size = UDim2.fromOffset(380, 28)
+compass.Position = UDim2.new(0.5, -190, 0, 19)
+compass.BackgroundTransparency = 1
+compass.Text = 'N        NE        E        SE        S'
+compass.TextColor3 = Color3.fromRGB(215, 215, 215)
+compass.TextTransparency = 0.28
+compass.TextSize = 12
+compass.FontFace = uipallet.Font
+compass.Parent = clickgui
 local modal = Instance.new('TextButton')
 modal.BackgroundTransparency = 1
 modal.Modal = true
@@ -2252,45 +2981,45 @@ end))
 
 mainapi:CreateCategory({
 	Name = 'GUI',
-	Icon = getcustomasset('newvape/assets/old/guiicon.png')
+	Icon = getcustomasset('newvape/assets/jello/guiicon.png')
 })
 local combat = mainapi:CreateCategory({
 	Name = 'Combat',
-	Icon = getcustomasset('newvape/assets/old/combaticon.png')
+	Icon = getcustomasset('newvape/assets/jello/combaticon.png')
 })
 mainapi:CreateCategory({
 	Name = 'Blatant',
-	Icon = getcustomasset('newvape/assets/old/blatanticon.png'),
+	Icon = getcustomasset('newvape/assets/jello/blatanticon.png'),
 	WindowSize = 164
 })
 mainapi:CreateCategory({
 	Name = 'Render',
-	Icon = getcustomasset('newvape/assets/old/rendericon.png'),
+	Icon = getcustomasset('newvape/assets/jello/rendericon.png'),
 	WindowSize = 196
 })
 mainapi:CreateCategory({
 	Name = 'Utility',
-	Icon = getcustomasset('newvape/assets/old/utilityicon.png'),
+	Icon = getcustomasset('newvape/assets/jello/utilityicon.png'),
 	WindowSize = 164
 })
 mainapi:CreateCategory({
 	Name = 'World',
-	Icon = getcustomasset('newvape/assets/old/worldicon.png')
+	Icon = getcustomasset('newvape/assets/jello/worldicon.png')
 })
 mainapi:CreateCategory({
 	Name = 'Inventory',
-	Icon = getcustomasset('newvape/assets/old/worldicon.png')
+	Icon = getcustomasset('newvape/assets/jello/worldicon.png')
 })
 mainapi:CreateCategory({
 	Name = 'Minigames',
-	Icon = getcustomasset('newvape/assets/old/worldicon.png')
+	Icon = getcustomasset('newvape/assets/jello/worldicon.png')
 })
 mainapi.Legit = mainapi:CreateLegit({
 	Name = 'Legit'
 })
 local settingspane = mainapi:CreateCategory({
 	Name = 'Settings',
-	Icon = getcustomasset('newvape/assets/old/settingsicon.png'),
+	Icon = getcustomasset('newvape/assets/jello/settingsicon.png'),
 	WindowSize = 166
 })
 
@@ -2306,7 +3035,7 @@ local friendscolor = {
 }
 local friendssettings = {
 	Name = 'Friends',
-	Icon = getcustomasset('newvape/assets/old/friendsicon.png'),
+	Icon = getcustomasset('newvape/assets/jello/friendsicon.png'),
 	Placeholder = 'Roblox username',
 	WindowSize = 250,
 	Function = function()
@@ -2351,7 +3080,7 @@ mainapi:Clean(friends.ColorUpdate)
 ]]
 mainapi:CreateCategoryList({
 	Name = 'Profiles',
-	Icon = getcustomasset('newvape/assets/old/profilesicon.png'),
+	Icon = getcustomasset('newvape/assets/jello/profilesicon.png'),
 	Placeholder = 'Type name',
 	WindowSize = 250,
 	Profiles = true
@@ -2363,7 +3092,7 @@ mainapi:CreateCategoryList({
 local targets
 targets = mainapi:CreateCategoryList({
 	Name = 'Targets',
-	Icon = getcustomasset('newvape/assets/old/friendsicon.png'),
+	Icon = getcustomasset('newvape/assets/jello/friendsicon.png'),
 	Placeholder = 'Roblox username',
 	WindowSize = 250,
 	Function = function()
@@ -2509,7 +3238,7 @@ scaleslider = topbar:CreateSlider({
 })
 topbar:CreateDropdown({
 	Name = 'GUI Theme',
-	List = inputService.TouchEnabled and {'new', 'old', 'jello'} or {'new', 'old', 'rise', 'liquidbounce', 'jello'},
+	List = inputService.TouchEnabled and {'jello', 'new', 'old'} or {'jello', 'new', 'old', 'rise', 'liquidbounce'},
 	Function = function(val, mouse)
 		if mouse then
 			writefile('newvape/profiles/gui.txt', val)
@@ -2521,7 +3250,7 @@ topbar:CreateDropdown({
 			end
 		end
 	end,
-	Tooltip = 'new - The newest vape theme to since v4.05\nold - The vape theme pre v4.05\nrise - Rise 6.0'
+	Tooltip = 'jello - Sigma Jello inspired interface\nnew/old - Vape themes\nrise/liquidbounce - alternate interfaces'
 })
 mainapi.RainbowMode = topbar:CreateDropdown({
 	Name = 'Rainbow Mode',
@@ -2792,7 +3521,7 @@ mainapi.Libraries.targetinfo = targetinfo
 
 local textgui = mainapi:CreateOverlay({
 	Name = 'Text GUI',
-	Icon = getcustomasset('newvape/assets/old/textguiicon.png'),
+	Icon = getcustomasset('newvape/assets/jello/textguiicon.png'),
 	WindowSize = 178,
 	Function = function()
 		mainapi:UpdateTextGUI()
@@ -2843,11 +3572,11 @@ local textguimodules = textgui:CreateToggle({
 	Name = 'Hide modules',
 	Tooltip = 'Allows you to blacklist certain modules from being shown.',
 	Function = function(enabled)
-		textguimoduleslist.Object.Visible = enabled
+		if textguimoduleslist then textguimoduleslist.Object.Visible = enabled end
 		mainapi:UpdateTextGUI()
 	end
 })
---[[textguimoduleslist = textgui:CreateTextList({
+textguimoduleslist = textgui:CreateTextList({
 	Name = 'Blacklist',
 	Tooltip = 'Name of module to hide.',
 	Icon = getcustomasset('new/blockedicon.png'),
@@ -2859,7 +3588,7 @@ local textguimodules = textgui:CreateToggle({
 	end,
 	Visible = false,
 	Darker = true
-})]]
+})
 local textguirender = textgui:CreateToggle({
 	Name = 'Hide render',
 	Function = function(enabled)
@@ -2880,8 +3609,21 @@ VapeLogo.BackgroundTransparency = 1
 VapeLogo.BorderSizePixel = 0
 VapeLogo.Visible = true
 VapeLogo.BackgroundColor3 = Color3.new()
-VapeLogo.Image = getcustomasset('newvape/assets/old/textvape.png')
+VapeLogo.Image = getcustomasset('newvape/assets/jello/textvape.png')
+VapeLogo.ImageTransparency = 1
 VapeLogo.Parent = textgui.Children
+local JelloLogoText = Instance.new('TextLabel')
+JelloLogoText.Name = 'JelloLogoText'
+JelloLogoText.Size = UDim2.fromOffset(132, 42)
+JelloLogoText.Position = UDim2.fromOffset(-34, -4)
+JelloLogoText.BackgroundTransparency = 1
+JelloLogoText.Text = 'Sigma\nJello'
+JelloLogoText.TextXAlignment = Enum.TextXAlignment.Right
+JelloLogoText.TextYAlignment = Enum.TextYAlignment.Top
+JelloLogoText.TextColor3 = Color3.new(1, 1, 1)
+JelloLogoText.TextSize = 21
+JelloLogoText.FontFace = uipallet.Font
+JelloLogoText.Parent = VapeLogo
 
 local lastside = textgui.Children.AbsolutePosition.X > (gui.AbsoluteSize.X / 2)
 mainapi:Clean(textgui.Children:GetPropertyChangedSignal('AbsolutePosition'):Connect(function()
@@ -2902,7 +3644,8 @@ VapeLogoV4.Position = UDim2.new(1, 1, 0, -2)
 VapeLogoV4.BackgroundColor3 = Color3.new()
 VapeLogoV4.BackgroundTransparency = 1
 VapeLogoV4.BorderSizePixel = 0
-VapeLogoV4.Image = getcustomasset('newvape/assets/old/textv4.png')
+VapeLogoV4.Image = getcustomasset('newvape/assets/jello/textv4.png')
+VapeLogoV4.Visible = false
 VapeLogoV4.Parent = VapeLogo
 local VapeLogoShadow = VapeLogo:Clone()
 VapeLogoShadow.Position = UDim2.fromOffset(1, 1)
@@ -2914,6 +3657,7 @@ VapeLogoShadow.Parent = VapeLogo
 VapeLogoShadow.Logo2.ZIndex = 0
 VapeLogoShadow.Logo2.ImageColor3 = Color3.new()
 VapeLogoShadow.Logo2.ImageTransparency = 0.65
+VapeLogoShadow.JelloLogoText.Visible = false
 local VapeLogoGradient = Instance.new('UIGradient')
 VapeLogoGradient.Rotation = 90
 VapeLogoGradient.Parent = VapeLogo
@@ -2953,7 +3697,7 @@ function mainapi:UpdateTextGUI(afterload)
 		table.clear(VapeLabels)
 
 		for i, v in mainapi.Modules do
-			if textguimodules.Enabled and table.find(textguimoduleslist.ListEnabled, i) then continue end
+			if textguimodules.Enabled and textguimoduleslist and table.find(textguimoduleslist.ListEnabled, i) then continue end
 			if textguirender.Enabled and v.Category == 'Render' then continue end
 			if v.Category == 'GUI' then continue end
 			if v.Enabled or table.find(found, i) then
@@ -3014,17 +3758,12 @@ function mainapi:UpdateTextGUI(afterload)
 end
 
 function mainapi:UpdateModuleColor(button, hue, sat, val, default, rainbowcheck)
-	if button.Enabled then
-		button.Object.BackgroundColor3 = rainbowcheck and Color3.fromHSV(mainapi:Color((hue - (button.Index * 0.025)) % 1)) or Color3.fromHSV(hue, sat, val)
-		button.Object.TextColor3 = mainapi.GUIColor.Rainbow and Color3.new(0.19, 0.19, 0.19) or mainapi:TextColor(hue, sat, val)
-		button.Object.UIGradient.Enabled = rainbowcheck and mainapi.RainbowMode.Value == 'Gradient'
-		if button.Object.UIGradient.Enabled then
-			button.Object.BackgroundColor3 = Color3.new(1, 1, 1)
-			button.Object.UIGradient.Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, Color3.fromHSV(mainapi:Color((hue - (button.Index * 0.025)) % 1))),
-				ColorSequenceKeypoint.new(1, Color3.fromHSV(mainapi:Color((hue - ((button.Index + 1) * 0.025)) % 1)))
-			})
-		end
+	local accent = button.Object and button.Object:FindFirstChild('Accent')
+	if accent then
+		accent.Visible = button.Enabled
+		accent.BackgroundColor3 = rainbowcheck
+			and Color3.fromHSV(mainapi:Color((hue - (button.Index * 0.025)) % 1))
+			or Color3.fromHSV(hue, sat, val)
 	end
 
 	for _, option in button.Options do
@@ -3038,6 +3777,7 @@ function mainapi:UpdateGUI(hue, sat, val, default)
 	if mainapi.Loaded == nil then return end
 	if not default and mainapi.GUIColor.Rainbow then return end
 	if textgui.Button.Enabled then
+		JelloLogoText.TextColor3 = Color3.fromHSV(hue, sat, val)
 		VapeLogoGradient.Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Color3.fromHSV(hue, sat, val)),
 			ColorSequenceKeypoint.new(1, mainapi.GUIColor.Rainbow and Color3.fromHSV(mainapi:Color((hue - 0.075) % 1)) or Color3.fromHSV(hue, sat, val))
