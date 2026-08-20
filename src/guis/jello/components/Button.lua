@@ -1,7 +1,7 @@
 local optionapi = {Type = 'Button'}
 local button = Instance.new('TextButton')
 button.Name = optionsettings.Name..'Button'
-button.Size = UDim2.new(1, -12, 0, 44)
+button.Size = UDim2.new(1, -12, 0, 40)
 button.BackgroundTransparency = 1
 button.BorderSizePixel = 0
 button.AutoButtonColor = false
@@ -9,7 +9,7 @@ button.Visible = optionsettings.Visible == nil or optionsettings.Visible
 button.Text = optionsettings.Name
 button.TextXAlignment = Enum.TextXAlignment.Left
 button.TextColor3 = Color3.fromRGB(45, 151, 215)
-button.TextSize = 18
+button.TextSize = 17
 button.FontFace = uipallet.Font
 button.ZIndex = children.ZIndex + 1
 button.Parent = children

@@ -22,7 +22,7 @@ local mainapi = {
 	Scale = {Value = 1},
 	ToggleNotifications = {},
 	ThreadFix = setthreadidentity and true or false,
-	Version = 'Jello 1.0',
+	Version = 'Jello 1.1',
 	Windows = {}
 }
 
@@ -89,7 +89,8 @@ local getcustomassets = {
 	['newvape/assets/jello/utilityicon.png'] = 'rbxasset://utilityicon.png',
 	['newvape/assets/jello/vape.png'] = 'rbxassetid://14373395239',
 	['newvape/assets/jello/worldicon.png'] = 'rbxasset://worldicon.png',
-	['newvape/assets/jello/jelloregular.ttf'] = ''
+	['newvape/assets/jello/jelloreg.ttf'] = '',
+	['newvape/assets/jello/jellosemibold.ttf'] = ''
 }
 
 local isfile = isfile or function(file)
@@ -266,24 +267,53 @@ end
 
 local function loadJelloFont()
 	if not assetfunction then return end
+
 	local success = pcall(function()
 		local familyPath = 'newvape/assets/jello/jellofont.json'
+
 		writefile(familyPath, httpService:JSONEncode({
 			name = 'Helvetica Neue',
-			faces = {{
-				name = 'Regular',
-				weight = 400,
-				style = 'normal',
-				assetId = getcustomasset('newvape/assets/jello/jelloregular.ttf')
-			}}
+			faces = {
+				{
+					name = 'Regular',
+					weight = 400,
+					style = 'normal',
+					assetId = getcustomasset(
+						'newvape/assets/jello/jelloreg.ttf'
+					)
+				},
+				{
+					name = 'SemiBold',
+					weight = 600,
+					style = 'normal',
+					assetId = getcustomasset(
+						'newvape/assets/jello/jellosemibold.ttf'
+					)
+				}
+			}
 		}))
+
 		local family = getcustomasset(familyPath)
-		uipallet.Font = Font.new(family, Enum.FontWeight.Regular)
-		uipallet.FontSemiBold = Font.new(family, Enum.FontWeight.Medium)
+
+		uipallet.Font = Font.new(
+			family,
+			Enum.FontWeight.Regular,
+			Enum.FontStyle.Normal
+		)
+
+		uipallet.FontSemiBold = Font.new(
+			family,
+			Enum.FontWeight.SemiBold,
+			Enum.FontStyle.Normal
+		)
 	end)
+
 	if not success then
 		uipallet.Font = Font.fromEnum(Enum.Font.Arial)
-		uipallet.FontSemiBold = Font.fromEnum(Enum.Font.Arial, Enum.FontWeight.Medium)
+		uipallet.FontSemiBold = Font.fromEnum(
+			Enum.Font.Arial,
+			Enum.FontWeight.SemiBold
+		)
 	end
 end
 
@@ -575,8 +605,8 @@ function mainapi:CreateBar()
 
 	local bar = Instance.new('Frame')
 	bar.Name = 'JelloBar'
-	bar.Size = UDim2.fromOffset(310, 64)
-	bar.Position = UDim2.fromOffset(15, 7)
+	bar.Size = UDim2.fromOffset(124, 62)
+	bar.Position = UDim2.fromOffset(9, 8)
 	bar.BackgroundTransparency = 1
 	bar.BorderSizePixel = 0
 	bar.Parent = clickgui
@@ -597,21 +627,6 @@ function mainapi:CreateBar()
 	sublogo.TextSize = 13
 	sublogo.TextColor3 = Color3.fromRGB(210, 210, 210)
 	sublogo.Parent = bar
-
-	local managerButton = Instance.new('TextButton')
-	managerButton.Name = 'KeybindManagerButton'
-	managerButton.Size = UDim2.fromOffset(154, 31)
-	managerButton.Position = UDim2.fromOffset(132, 10)
-	managerButton.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
-	managerButton.BackgroundTransparency = 0.04
-	managerButton.BorderSizePixel = 0
-	managerButton.AutoButtonColor = false
-	managerButton.Text = 'Keybind Manager'
-	managerButton.TextColor3 = Color3.fromRGB(55, 55, 55)
-	managerButton.TextSize = 15
-	managerButton.FontFace = uipallet.Font
-	managerButton.Parent = bar
-	addCorner(managerButton, UDim.new(0, 4))
 
 	local keyManager = Instance.new('CanvasGroup')
 	keyManager.Name = 'KeybindManager'
@@ -929,11 +944,17 @@ function mainapi:CreateBar()
 		end
 	end
 
-	managerButton.MouseButton1Click:Connect(function()
+	local function openKeyManager()
 		closeSelector()
 		if details then details:Destroy(); details = nil end
 		mainapi:ShowJelloModal(keyManager)
-	end)
+	end
+	mainapi.Categories.Main:CreateModule({
+		Name = 'Keybind Manager',
+		SettingsOnly = true,
+		Action = openKeyManager,
+		Tooltip = 'Assign modules to keyboard keys'
+	})
 	managerClose.MouseButton1Click:Connect(function()
 		closeSelector()
 		mainapi:HideJelloModal(keyManager)
@@ -2467,15 +2488,23 @@ end
 -- Jello uses compact category cards and a separate right-click settings sheet.
 -- These implementations replace the inherited legacy window builders while
 -- retaining the same public module/component API used by universal modules.
+local jelloCategoryWidth = 146
+local jelloCategoryHeaderHeight = 28
+local jelloCategoryBodyHeight = 224
+local jelloCategoryRowHeight = 22
+local jelloCategoryTop = 112
+local jelloCategoryBottom = jelloCategoryTop + jelloCategoryHeaderHeight + jelloCategoryBodyHeight + 14
 local jelloCategoryLayout = {
-	GUI = {Position = UDim2.fromOffset(18, 76), Title = 'Gui'},
-	Combat = {Position = UDim2.fromOffset(194, 76), Title = 'Combat'},
-	Render = {Position = UDim2.fromOffset(370, 76), Title = 'Render'},
-	World = {Position = UDim2.fromOffset(546, 76), Title = 'World'},
-	Utility = {Position = UDim2.fromOffset(18, 370), Title = 'Misc'},
-	Legit = {Position = UDim2.fromOffset(194, 370), Title = 'Player'},
-	Inventory = {Position = UDim2.fromOffset(370, 370), Title = 'Item'},
-	Blatant = {Position = UDim2.fromOffset(546, 370), Title = 'Movement'}
+	-- Match Sigma Jello's fixed 4 x 2 ordering instead of adapting the
+	-- layout to the order categories happen to be registered in Roblox.
+	Legit = {Position = UDim2.fromOffset(64, jelloCategoryTop), Title = 'Player'},
+	Combat = {Position = UDim2.fromOffset(222, jelloCategoryTop), Title = 'Combat'},
+	Blatant = {Position = UDim2.fromOffset(380, jelloCategoryTop), Title = 'Movement'},
+	Inventory = {Position = UDim2.fromOffset(538, jelloCategoryTop), Title = 'Item'},
+	GUI = {Position = UDim2.fromOffset(64, jelloCategoryBottom), Title = 'Gui'},
+	World = {Position = UDim2.fromOffset(222, jelloCategoryBottom), Title = 'World'},
+	Utility = {Position = UDim2.fromOffset(380, jelloCategoryBottom), Title = 'Misc'},
+	Render = {Position = UDim2.fromOffset(538, jelloCategoryBottom), Title = 'Render'}
 }
 local jelloHUDCount = 0
 
@@ -2488,20 +2517,19 @@ local function createJelloCategory(api, categorysettings, legit)
 	}
 	local moduleStore = legit and categoryapi.Modules or api.Modules
 	local layout = jelloCategoryLayout[categorysettings.Name] or {
-		Position = UDim2.fromOffset(722, 76),
+		Position = UDim2.fromOffset(696, jelloCategoryTop),
 		Title = categorysettings.Name
 	}
 
 	local window = Instance.new('Frame')
 	window.Name = categorysettings.Name..'Category'
-	window.Size = UDim2.fromOffset(168, 32)
+	window.Size = UDim2.fromOffset(jelloCategoryWidth, jelloCategoryHeaderHeight)
 	window.Position = layout.Position
-	window.BackgroundColor3 = Color3.fromRGB(247, 247, 247)
+	window.BackgroundColor3 = Color3.fromRGB(232, 232, 232)
 	window.BorderSizePixel = 0
 	window.Visible = true
 	window.ClipsDescendants = false
 	window.Parent = clickgui
-	addCorner(window, UDim.new(0, 2))
 
 	local title = Instance.new('TextLabel')
 	title.Name = 'Title'
@@ -2517,15 +2545,14 @@ local function createJelloCategory(api, categorysettings, legit)
 
 	local children = Instance.new('ScrollingFrame')
 	children.Name = 'Children'
-	children.Size = UDim2.new(1, 0, 0, 0)
-	children.Position = UDim2.fromOffset(0, 32)
-	children.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+	children.Size = UDim2.new(1, 0, 0, jelloCategoryBodyHeight)
+	children.Position = UDim2.fromOffset(0, jelloCategoryHeaderHeight)
+	children.BackgroundColor3 = Color3.fromRGB(247, 247, 247)
 	children.BorderSizePixel = 0
 	children.Visible = true
 	children.ScrollBarThickness = 0
 	children.CanvasSize = UDim2.new()
 	children.Parent = window
-	addCorner(children, UDim.new(0, 2))
 	local windowlist = Instance.new('UIListLayout')
 	windowlist.SortOrder = Enum.SortOrder.LayoutOrder
 	windowlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -2541,15 +2568,15 @@ local function createJelloCategory(api, categorysettings, legit)
 			ExtraText = modulesettings.ExtraText,
 			Name = modulesettings.Name,
 			Category = categorysettings.Name,
-			SettingsOnly = modulesettings.SettingsOnly == true
+			SettingsOnly = modulesettings.SettingsOnly == true or type(modulesettings.Action) == 'function'
 		}
 		modulesettings.Function = modulesettings.Function or function() end
 		addMaid(moduleapi)
 
 		local modulebutton = Instance.new('TextButton')
 		modulebutton.Name = modulesettings.Name
-		modulebutton.Size = UDim2.new(1, 0, 0, 27)
-		modulebutton.BackgroundColor3 = Color3.fromRGB(250, 250, 250)
+		modulebutton.Size = UDim2.new(1, 0, 0, jelloCategoryRowHeight)
+		modulebutton.BackgroundColor3 = Color3.fromRGB(247, 247, 247)
 		modulebutton.BorderSizePixel = 0
 		modulebutton.AutoButtonColor = false
 		modulebutton.Text = ''
@@ -2562,7 +2589,7 @@ local function createJelloCategory(api, categorysettings, legit)
 		moduleLabel.Text = modulesettings.Name
 		moduleLabel.TextXAlignment = Enum.TextXAlignment.Left
 		moduleLabel.TextColor3 = Color3.fromRGB(72, 72, 72)
-		moduleLabel.TextSize = 14
+		moduleLabel.TextSize = 13
 		moduleLabel.FontFace = uipallet.Font
 		moduleLabel.Parent = modulebutton
 		local accent = Instance.new('Frame')
@@ -2584,7 +2611,7 @@ local function createJelloCategory(api, categorysettings, legit)
 
 		local settingswindow = Instance.new('CanvasGroup')
 		settingswindow.Name = modulesettings.Name..'Settings'
-		settingswindow.Size = UDim2.fromOffset(560, 640)
+		settingswindow.Size = UDim2.fromOffset(520, 570)
 		settingswindow.Position = UDim2.fromScale(0.5, 0.5)
 		settingswindow.AnchorPoint = Vector2.new(0.5, 0.5)
 		settingswindow.BackgroundColor3 = Color3.fromRGB(252, 252, 252)
@@ -2592,45 +2619,45 @@ local function createJelloCategory(api, categorysettings, legit)
 		settingswindow.Visible = false
 		settingswindow.ZIndex = 41
 		settingswindow.Parent = modalBackdrop
-		addCorner(settingswindow, UDim.new(0, 10))
+		addCorner(settingswindow, UDim.new(0, 7))
 		local stroke = Instance.new('UIStroke')
 		stroke.Color = Color3.fromRGB(214, 214, 214)
 		stroke.Thickness = 1
 		stroke.Transparency = 0.3
 		stroke.Parent = settingswindow
 		local settingsTitle = Instance.new('TextLabel')
-		settingsTitle.Size = UDim2.new(1, -82, 0, 56)
-		settingsTitle.Position = UDim2.fromOffset(29, 12)
+		settingsTitle.Size = UDim2.new(1, -76, 0, 44)
+		settingsTitle.Position = UDim2.fromOffset(24, 9)
 		settingsTitle.BackgroundTransparency = 1
 		settingsTitle.Text = modulesettings.Name
 		settingsTitle.TextXAlignment = Enum.TextXAlignment.Left
 		settingsTitle.TextColor3 = Color3.fromRGB(33, 33, 33)
-		settingsTitle.TextSize = 35
+		settingsTitle.TextSize = 30
 		settingsTitle.FontFace = uipallet.Font
 		settingsTitle.ZIndex = 42
 		settingsTitle.Parent = settingswindow
 		local description = settingsTitle:Clone()
-		description.Size = UDim2.new(1, -62, 0, 30)
-		description.Position = UDim2.fromOffset(30, 67)
+		description.Size = UDim2.new(1, -52, 0, 28)
+		description.Position = UDim2.fromOffset(25, 50)
 		description.Text = modulesettings.Tooltip or (modulesettings.SettingsOnly and 'Jello client settings' or 'Configure '..modulesettings.Name)
 		description.TextColor3 = uipallet.Muted
-		description.TextSize = 16
+		description.TextSize = 14
 		description.TextWrapped = true
 		description.Parent = settingswindow
 		local close = Instance.new('TextButton')
-		close.Size = UDim2.fromOffset(44, 44)
-		close.Position = UDim2.new(1, -56, 0, 14)
+		close.Size = UDim2.fromOffset(38, 38)
+		close.Position = UDim2.new(1, -48, 0, 8)
 		close.BackgroundTransparency = 1
 		close.Text = '×'
 		close.TextColor3 = uipallet.Muted
-		close.TextSize = 31
+		close.TextSize = 27
 		close.FontFace = uipallet.Font
 		close.ZIndex = 44
 		close.Parent = settingswindow
 		local settingschildren = Instance.new('ScrollingFrame')
 		settingschildren.Name = 'Children'
-		settingschildren.Size = UDim2.new(1, -48, 1, -120)
-		settingschildren.Position = UDim2.fromOffset(24, 106)
+		settingschildren.Size = UDim2.new(1, -42, 1, -92)
+		settingschildren.Position = UDim2.fromOffset(21, 82)
 		settingschildren.BackgroundTransparency = 1
 		settingschildren.BorderSizePixel = 0
 		settingschildren.ScrollBarThickness = 2
@@ -2641,7 +2668,7 @@ local function createJelloCategory(api, categorysettings, legit)
 		local settingslist = Instance.new('UIListLayout')
 		settingslist.SortOrder = Enum.SortOrder.LayoutOrder
 		settingslist.HorizontalAlignment = Enum.HorizontalAlignment.Center
-		settingslist.Padding = UDim.new(0, 3)
+		settingslist.Padding = UDim.new(0, 1)
 		settingslist.Parent = settingschildren
 		moduleapi.Children = settingschildren
 		moduleapi.SettingsChildren = settingschildren
@@ -2677,9 +2704,9 @@ local function createJelloCategory(api, categorysettings, legit)
 		end
 
 		local function renderEnabled(animated)
-			local background = moduleapi.Enabled and uipallet.Accent or Color3.fromRGB(250, 250, 250)
+			local background = moduleapi.Enabled and uipallet.Accent or Color3.fromRGB(247, 247, 247)
 			local textColor = moduleapi.Enabled and Color3.new(1, 1, 1) or Color3.fromRGB(72, 72, 72)
-			local position = UDim2.fromOffset(moduleapi.Enabled and 16 or 10, 0)
+			local position = UDim2.fromOffset(moduleapi.Enabled and 14 or 10, 0)
 			accent.Visible = moduleapi.Enabled
 			if animated then
 				tweenService:Create(modulebutton, TweenInfo.new(0.14, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = background}):Play()
@@ -2696,7 +2723,11 @@ local function createJelloCategory(api, categorysettings, legit)
 
 		function moduleapi:Toggle(multiple)
 			if self.SettingsOnly then
-				api:ShowJelloModal(settingswindow)
+				if modulesettings.Action then
+					modulesettings.Action()
+				else
+					api:ShowJelloModal(settingswindow)
+				end
 				return
 			end
 			if api.ThreadFix then setthreadidentity(8) end
@@ -2718,6 +2749,10 @@ local function createJelloCategory(api, categorysettings, legit)
 		end
 
 		local function openSettings()
+			if modulesettings.Action then
+				modulesettings.Action()
+				return
+			end
 			if modulesettings.Special and not modulesettings.SettingsOnly then return end
 			api:ShowJelloModal(settingswindow)
 		end
@@ -2765,7 +2800,6 @@ local function createJelloCategory(api, categorysettings, legit)
 	windowlist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 		local contentHeight = windowlist.AbsoluteContentSize.Y
 		children.CanvasSize = UDim2.fromOffset(0, contentHeight)
-		children.Size = UDim2.new(1, 0, 0, math.min(contentHeight, 262))
 	end)
 	categoryapi.Object = window
 	return categoryapi
@@ -3154,7 +3188,7 @@ local jelloBackdrop = Instance.new('Frame')
 jelloBackdrop.Name = 'Backdrop'
 jelloBackdrop.Size = UDim2.fromScale(1, 1)
 jelloBackdrop.BackgroundColor3 = Color3.fromRGB(8, 13, 18)
-jelloBackdrop.BackgroundTransparency = 0.48
+jelloBackdrop.BackgroundTransparency = 0.66
 jelloBackdrop.BorderSizePixel = 0
 jelloBackdrop.ZIndex = 0
 jelloBackdrop.Parent = clickgui
@@ -3165,17 +3199,17 @@ backdropGradient.Color = ColorSequence.new({
 	ColorSequenceKeypoint.new(1, Color3.fromRGB(46, 28, 49))
 })
 backdropGradient.Transparency = NumberSequence.new({
-	NumberSequenceKeypoint.new(0, 0.36),
-	NumberSequenceKeypoint.new(0.5, 0.62),
-	NumberSequenceKeypoint.new(1, 0.4)
+	NumberSequenceKeypoint.new(0, 0.58),
+	NumberSequenceKeypoint.new(0.5, 0.75),
+	NumberSequenceKeypoint.new(1, 0.62)
 })
 backdropGradient.Parent = jelloBackdrop
 local compass = Instance.new('TextLabel')
 compass.Name = 'Compass'
-compass.Size = UDim2.fromOffset(380, 28)
-compass.Position = UDim2.new(0.5, -190, 0, 19)
+compass.Size = UDim2.fromOffset(410, 30)
+compass.Position = UDim2.new(0.5, -205, 0, 22)
 compass.BackgroundTransparency = 1
-compass.Text = 'N        NE        E        SE        S'
+compass.Text = 'N     195     210     NE     240     255     E'
 compass.TextColor3 = Color3.fromRGB(215, 215, 215)
 compass.TextTransparency = 0.28
 compass.TextSize = 12
@@ -3289,13 +3323,13 @@ tooltip.TextSize = 14
 tooltip.FontFace = uipallet.Font
 tooltip.Parent = scaledgui
 scale = Instance.new('UIScale')
-scale.Scale = math.clamp(gui.AbsoluteSize.X / 1500, 1, 1.22)
+scale.Scale = math.clamp(gui.AbsoluteSize.Y / 900, 1, 1.08)
 scale.Parent = scaledgui
 mainapi.guiscale = scale
 scaledgui.Size = UDim2.fromScale(1 / scale.Scale, 1 / scale.Scale)
 
 mainapi:Clean(gui:GetPropertyChangedSignal('AbsoluteSize'):Connect(function()
-	scale.Scale = math.clamp(gui.AbsoluteSize.X / 1500, 1, 1.22)
+	scale.Scale = math.clamp(gui.AbsoluteSize.Y / 900, 1, 1.08)
 end))
 
 mainapi:Clean(scale:GetPropertyChangedSignal('Scale'):Connect(function()
@@ -3909,7 +3943,7 @@ local JelloLabels = {}
 local JelloHUDLogo = Instance.new('TextLabel')
 JelloHUDLogo.Name = 'SigmaLogo'
 JelloHUDLogo.Size = UDim2.fromOffset(190, 38)
-JelloHUDLogo.Position = UDim2.fromOffset(14, 10)
+JelloHUDLogo.Position = UDim2.fromOffset(14, 42)
 JelloHUDLogo.BackgroundTransparency = 1
 JelloHUDLogo.Text = 'Sigma'
 JelloHUDLogo.TextXAlignment = Enum.TextXAlignment.Left
@@ -3921,7 +3955,7 @@ JelloHUDLogo.Parent = textgui.Children
 local JelloHUDSublogo = JelloHUDLogo:Clone()
 JelloHUDSublogo.Name = 'JelloSublogo'
 JelloHUDSublogo.Size = UDim2.fromOffset(100, 18)
-JelloHUDSublogo.Position = UDim2.fromOffset(16, 43)
+JelloHUDSublogo.Position = UDim2.fromOffset(16, 74)
 JelloHUDSublogo.Text = 'Jello'
 JelloHUDSublogo.TextColor3 = Color3.fromRGB(205, 205, 205)
 JelloHUDSublogo.TextSize = 13
@@ -3930,7 +3964,7 @@ JelloHUDSublogo.Parent = textgui.Children
 local JelloLabelHolder = Instance.new('Frame')
 JelloLabelHolder.Name = 'ModuleList'
 JelloLabelHolder.Size = UDim2.fromOffset(430, 700)
-JelloLabelHolder.Position = UDim2.new(1, -18, 0, 13)
+JelloLabelHolder.Position = UDim2.new(1, -18, 0, 44)
 JelloLabelHolder.AnchorPoint = Vector2.new(1, 0)
 JelloLabelHolder.BackgroundTransparency = 1
 JelloLabelHolder.Parent = textgui.Children

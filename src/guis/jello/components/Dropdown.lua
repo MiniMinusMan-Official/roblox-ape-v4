@@ -6,7 +6,7 @@ local optionapi = {
 optionsettings.Function = optionsettings.Function or function() end
 local dropdown = Instance.new('Frame')
 dropdown.Name = optionsettings.Name..'Dropdown'
-dropdown.Size = UDim2.new(1, -12, 0, 46)
+dropdown.Size = UDim2.new(1, -12, 0, 40)
 dropdown.BackgroundTransparency = 1
 dropdown.BorderSizePixel = 0
 dropdown.Visible = optionsettings.Visible == nil or optionsettings.Visible
@@ -20,7 +20,7 @@ button.AutoButtonColor = false
 button.Text = optionsettings.Name
 button.TextXAlignment = Enum.TextXAlignment.Left
 button.TextColor3 = uipallet.Text
-button.TextSize = 18
+button.TextSize = 17
 button.FontFace = uipallet.Font
 button.ZIndex = dropdown.ZIndex + 1
 button.Parent = dropdown
@@ -31,13 +31,13 @@ value.BackgroundTransparency = 1
 value.Text = optionapi.Value
 value.TextXAlignment = Enum.TextXAlignment.Right
 value.TextColor3 = uipallet.Muted
-value.TextSize = 17
+value.TextSize = 15
 value.TextTruncate = Enum.TextTruncate.AtEnd
 value.FontFace = uipallet.Font
 value.ZIndex = button.ZIndex + 1
 value.Parent = button
 local arrow = value:Clone()
-arrow.Size = UDim2.fromOffset(22, 46)
+arrow.Size = UDim2.fromOffset(22, 40)
 arrow.Position = UDim2.new(1, -22, 0, 0)
 arrow.Text = '›'
 arrow.TextColor3 = Color3.fromRGB(113, 113, 113)
@@ -46,7 +46,7 @@ arrow.Parent = button
 local choices
 local function closeChoices()
 	if choices then choices:Destroy(); choices = nil end
-	dropdown.Size = UDim2.new(1, -12, 0, 46)
+	dropdown.Size = UDim2.new(1, -12, 0, 40)
 	arrow.Rotation = 0
 end
 function optionapi:Save(tab) tab[optionsettings.Name] = {Value = self.Value} end
@@ -66,7 +66,7 @@ button.MouseButton1Click:Connect(function()
 	choices = Instance.new('Frame')
 	choices.Name = 'Choices'
 	choices.Size = UDim2.new(1, 0, 0, math.max(#optionsettings.List * 36, 1))
-	choices.Position = UDim2.fromOffset(0, 46)
+	choices.Position = UDim2.fromOffset(0, 40)
 	choices.BackgroundColor3 = Color3.fromRGB(248, 248, 248)
 	choices.BorderSizePixel = 0
 	choices.ZIndex = dropdown.ZIndex + 3
@@ -81,13 +81,13 @@ button.MouseButton1Click:Connect(function()
 		choice.BackgroundTransparency = 1
 		choice.Text = name
 		choice.TextColor3 = name == optionapi.Value and uipallet.Accent or uipallet.Text
-		choice.TextSize = 17
+	choice.TextSize = 16
 		choice.FontFace = uipallet.Font
 		choice.ZIndex = choices.ZIndex + 1
 		choice.Parent = choices
 		choice.MouseButton1Click:Connect(function() optionapi:SetValue(name, true) end)
 	end
-	dropdown.Size = UDim2.new(1, -12, 0, 46 + (#optionsettings.List * 36))
+	dropdown.Size = UDim2.new(1, -12, 0, 40 + (#optionsettings.List * 36))
 	arrow.Rotation = 90
 end)
 optionapi.Object = dropdown
