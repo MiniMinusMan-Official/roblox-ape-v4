@@ -19,9 +19,26 @@ local UpdateReplication
 
 local VisualGhost
 local GhostCharacter
-local GhostRoot
-local GhostMotors = {}
+local GhostParts = {}
+local GhostPitchParts = {}
 local HiddenParts = {}
+local ViewCharacter
+local ViewPitch = 0
+local ViewYaw = 0
+local ViewActive = false
+
+local LOWER_BODY_PARTS = {
+	HumanoidRootPart = true,
+	LowerTorso = true,
+	LeftUpperLeg = true,
+	LeftLowerLeg = true,
+	LeftFoot = true,
+	RightUpperLeg = true,
+	RightLowerLeg = true,
+	RightFoot = true,
+	['Left Leg'] = true,
+	['Right Leg'] = true
+}
 
 local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
 
@@ -60,8 +77,8 @@ local function destroyGhost()
 
 	VisualGhost = nil
 	GhostCharacter = nil
-	GhostRoot = nil
-	table.clear(GhostMotors)
+	table.clear(GhostParts)
+	table.clear(GhostPitchParts)
 end
 
 local function clearPlayerView()
@@ -100,6 +117,63 @@ local function findMotor(character, name)
 	end
 end
 
+local function buildPitchParts(character)
+	table.clear(GhostPitchParts)
+
+	local waist = findMotor(character, 'Waist')
+	local rootJoint = findMotor(character, 'RootJoint')
+	local startPart = (waist and waist.Part1)
+		or (rootJoint and rootJoint.Part1)
+		or character:FindFirstChild('UpperTorso')
+		or character:FindFirstChild('Torso')
+
+	if not startPart then return end
+	GhostPitchParts[startPart] = true
+
+	local joints = {}
+
+	for _, descendant in character:GetDescendants() do
+		if descendant:IsA('JointInstance')
+			or descendant:IsA('WeldConstraint') then
+			table.insert(joints, descendant)
+		end
+	end
+
+	local changed = true
+
+	while changed do
+		changed = false
+
+		for _, joint in joints do
+			local part0 = joint.Part0
+			local part1 = joint.Part1
+
+			if part0 and part1 then
+				if joint:IsA('Motor6D') then
+					if GhostPitchParts[part0]
+						and not LOWER_BODY_PARTS[part1.Name]
+						and not GhostPitchParts[part1] then
+						GhostPitchParts[part1] = true
+						changed = true
+					end
+				else
+					if GhostPitchParts[part0]
+						and not LOWER_BODY_PARTS[part1.Name]
+						and not GhostPitchParts[part1] then
+						GhostPitchParts[part1] = true
+						changed = true
+					elseif GhostPitchParts[part1]
+						and not LOWER_BODY_PARTS[part0.Name]
+						and not GhostPitchParts[part0] then
+						GhostPitchParts[part0] = true
+						changed = true
+					end
+				end
+			end
+		end
+	end
+end
+
 local function createPlayerGhost(character)
 	clearPlayerView()
 	if not character then return false end
@@ -120,36 +194,42 @@ local function createPlayerGhost(character)
 	VisualGhost = clone
 	GhostCharacter = character
 	VisualGhost.Name = 'AntiAimPlayerView'
-	GhostRoot = VisualGhost:FindFirstChild('HumanoidRootPart')
 
-	if not GhostRoot then
+	buildPitchParts(character)
+
+	for _, realPart in character:GetDescendants() do
+		if realPart:IsA('BasePart') then
+			local ghostPart = findCloneInstance(realPart, character, VisualGhost)
+
+			if ghostPart and ghostPart:IsA('BasePart') then
+				GhostParts[realPart] = ghostPart
+			end
+		end
+	end
+
+	local realRoot = character:FindFirstChild('HumanoidRootPart')
+	local ghostRoot = realRoot and GhostParts[realRoot]
+
+	if not realRoot or not ghostRoot then
 		destroyGhost()
 		return false
 	end
 
-	local humanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
-
-	if humanoid then
-		humanoid.AutoRotate = false
-		humanoid.BreakJointsOnDeath = false
-		humanoid.RequiresNeck = false
-		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
-
-		pcall(function()
-			humanoid.EvaluateStateMachine = false
-		end)
-	end
-
 	for _, descendant in VisualGhost:GetDescendants() do
-		if descendant:IsA('Script')
+		if descendant:IsA('Humanoid')
+			or descendant:IsA('Animator')
+			or descendant:IsA('AnimationController')
+			or descendant:IsA('Script')
 			or descendant:IsA('LocalScript')
 			or descendant:IsA('ModuleScript')
 			or descendant:IsA('BillboardGui')
-			or descendant:IsA('Sound') then
+			or descendant:IsA('Sound')
+			or descendant:IsA('JointInstance')
+			or descendant:IsA('Constraint')
+			or descendant:IsA('BodyMover') then
 			descendant:Destroy()
 		elseif descendant:IsA('BasePart') then
-			descendant.Anchored = false
+			descendant.Anchored = true
 			descendant.CanCollide = false
 			descendant.CanTouch = false
 			descendant.CanQuery = false
@@ -160,27 +240,26 @@ local function createPlayerGhost(character)
 		end
 	end
 
-	GhostRoot.Anchored = true
-	GhostRoot.Transparency = 1
+	ghostRoot.Transparency = 1
 	VisualGhost.Parent = workspace
 
-	if humanoid then
-		pcall(function()
-			humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-		end)
-	end
-
-	for _, realMotor in character:GetDescendants() do
-		if realMotor:IsA('Motor6D') then
-			local ghostMotor = findCloneInstance(realMotor, character, VisualGhost)
-
-			if ghostMotor and ghostMotor:IsA('Motor6D') then
-				GhostMotors[realMotor] = ghostMotor
-			end
-		end
-	end
-
 	return true
+end
+
+local function getPitchPivot(character)
+	local motor = findMotor(character, 'Waist')
+		or findMotor(character, 'RootJoint')
+
+	if motor and motor.Part0 then
+		return motor.Part0.CFrame * motor.C0 * motor.Transform
+	end
+
+	local torso = character:FindFirstChild('UpperTorso')
+		or character:FindFirstChild('Torso')
+
+	if torso then
+		return torso.CFrame * CFrame.new(0, -torso.Size.Y / 2, 0)
+	end
 end
 
 local function updatePlayerGhost(character, pitch, fakeYaw)
@@ -193,49 +272,36 @@ local function updatePlayerGhost(character, pitch, fakeYaw)
 	end
 
 	local realRoot = character:FindFirstChild('HumanoidRootPart')
+	local ghostRoot = realRoot and GhostParts[realRoot]
 
-	if not realRoot or not GhostRoot or not GhostRoot.Parent then
+	if not realRoot or not ghostRoot or not ghostRoot.Parent then
 		return false
 	end
-	
-	for realMotor, ghostMotor in GhostMotors do
-		if realMotor.Parent and ghostMotor.Parent then
-			ghostMotor.Transform = realMotor.Transform
+
+	local targetRoot = CFrame.new(realRoot.Position)
+		* CFrame.Angles(0, fakeYaw, 0)
+	local yawOffset = targetRoot * realRoot.CFrame:Inverse()
+	local realPivot = getPitchPivot(character)
+	local pitchRotation
+
+	if realPivot then
+		local targetPivot = yawOffset * realPivot
+		pitchRotation = targetPivot
+			* CFrame.Angles(math.rad(pitch), 0, 0)
+			* targetPivot:Inverse()
+	end
+
+	for realPart, ghostPart in GhostParts do
+		if realPart.Parent and ghostPart.Parent then
+			local targetCFrame = yawOffset * realPart.CFrame
+
+			if pitchRotation and GhostPitchParts[realPart] then
+				targetCFrame = pitchRotation * targetCFrame
+			end
+
+			ghostPart.CFrame = targetCFrame
+			ghostPart.LocalTransparencyModifier = 0
 		end
-	end
-	
-	GhostRoot.CFrame = CFrame.new(realRoot.Position) * CFrame.Angles(0, fakeYaw, 0)
-
-	local pitchOffset = CFrame.Angles(math.rad(pitch), 0, 0)
-	local realWaist = findMotor(character, 'Waist')
-	local ghostWaist = realWaist and GhostMotors[realWaist]
-
-	if ghostWaist then
-		ghostWaist.Transform = realWaist.Transform * pitchOffset
-		return true
-	end
-
-	-- fallback if they are in r6
-	local realRootJoint = findMotor(character, 'RootJoint')
-	local ghostRootJoint = realRootJoint and GhostMotors[realRootJoint]
-
-	if ghostRootJoint then
-		ghostRootJoint.Transform = realRootJoint.Transform * pitchOffset
-	end
-
-	local inversePitch = CFrame.Angles(math.rad(-pitch), 0, 0)
-	local realLeftHip = findMotor(character, 'Left Hip')
-	local ghostLeftHip = realLeftHip and GhostMotors[realLeftHip]
-
-	if ghostLeftHip then
-		ghostLeftHip.Transform = realLeftHip.Transform * inversePitch
-	end
-
-	local realRightHip = findMotor(character, 'Right Hip')
-	local ghostRightHip = realRightHip and GhostMotors[realRightHip]
-
-	if ghostRightHip then
-		ghostRightHip.Transform = realRightHip.Transform * inversePitch
 	end
 
 	return true
@@ -334,9 +400,23 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 			lastPitchUpdate = 0
 			lastPitchValue = 0
 			jitterState = false
+			ViewCharacter = nil
+			ViewPitch = 0
+			ViewYaw = 0
+			ViewActive = false
+
+			SpinBot:Clean(RunService.PreRender:Connect(function()
+				if ViewActive and ViewCharacter and entitylib.isAlive then
+					updateAntiAimView(ViewCharacter, ViewPitch, ViewYaw)
+				else
+					clearPlayerView()
+				end
+			end))
 
 			SpinBot:Clean(RunService.PreSimulation:Connect(function(delta)
 				if not entitylib.isAlive then
+					ViewActive = false
+					ViewCharacter = nil
 					clearPlayerView()
 					return
 				end
@@ -345,6 +425,8 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 				local root = entitylib.character.RootPart
 
 				if not character or not root then
+					ViewActive = false
+					ViewCharacter = nil
 					clearPlayerView()
 					return
 				end
@@ -358,13 +440,25 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 
 				if inSCPRP and AntiAim and AntiAim.Enabled then
 					local pitch = getAntiAimPitch()
-					updateAntiAimView(character, pitch, fakeYaw)
+					ViewCharacter = character
+					ViewPitch = pitch
+					ViewYaw = fakeYaw
+					ViewActive = AntiAimView and AntiAimView.Enabled or false
+
+					if not ViewActive then
+						clearPlayerView()
+					end
+
 					sendPitch(pitch)
 				else
+					ViewActive = false
+					ViewCharacter = nil
 					clearPlayerView()
 				end
 			end))
 		else
+			ViewActive = false
+			ViewCharacter = nil
 			clearPlayerView()
 
 			if inSCPRP then
