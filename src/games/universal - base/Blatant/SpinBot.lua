@@ -8,452 +8,329 @@ local AntiAimPitch
 local AntiAimView
 local AntiAimPitchRandom
 local AntiAimMode
-
-local lastPitchUpdate = 0
-local lastPitchValue = 0
-local jitterState = false
+local lastupd = 0
+local jit_tog = false
 local SpinAngle = 0
-
-local RunService = game:GetService('RunService')
+local OldAutoRotate
 local UpdateReplication
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
-local VisualGhost
-local GhostCharacter
+local LocalPlayer = Players.LocalPlayer
 local GhostParts = {}
+local VisualGhost = nil
+local GhostCharacter = nil
 local HiddenParts = {}
-
-local LOWER_BODY_PARTS = {
-	HumanoidRootPart = true,
-	LeftUpperLeg = true,
-	LeftLowerLeg = true,
-	LeftFoot = true,
-	RightUpperLeg = true,
-	RightLowerLeg = true,
-	RightFoot = true,
-	['Left Leg'] = true,
-	['Right Leg'] = true
-}
 
 local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
 
 if inSCPRP then
-	UpdateReplication = game:GetService('ReplicatedStorage').Remotes.UpdateReplication
-end
-
-local function restorePlayerVisibility()
-	for part, transparency in HiddenParts do
-		if part.Parent then
-			part.LocalTransparencyModifier = transparency
-		end
-	end
-
-	table.clear(HiddenParts)
-end
-
-local function hidePlayer(character)
-	if not character then return end
-
-	for _, descendant in character:GetDescendants() do
-		if descendant:IsA('BasePart') then
-			if HiddenParts[descendant] == nil then
-				HiddenParts[descendant] = descendant.LocalTransparencyModifier
-			end
-
-			descendant.LocalTransparencyModifier = 1
-		end
-	end
+	UpdateReplication = game:GetService("ReplicatedStorage").Remotes.UpdateReplication
 end
 
 local function destroyGhost()
 	if VisualGhost then
 		VisualGhost:Destroy()
+		VisualGhost = nil
 	end
 
-	VisualGhost = nil
 	GhostCharacter = nil
 	table.clear(GhostParts)
 end
-
-local function clearPlayerView()
-	restorePlayerVisibility()
-	destroyGhost()
-end
-
-local function findCloneInstance(realInstance, realCharacter, cloneCharacter)
-	local path = {}
-	local current = realInstance
-
-	while current and current ~= realCharacter do
-		local siblingIndex = 0
-
-		for _, sibling in current.Parent:GetChildren() do
-			if sibling.Name == current.Name
-				and sibling.ClassName == current.ClassName then
-				siblingIndex += 1
-
-				if sibling == current then
-					break
-				end
-			end
+local function restorePlayerVisibility()
+	for part, transparency in HiddenParts do
+		if part and part.Parent then
+			part.LocalTransparencyModifier = transparency
 		end
+	end
+	table.clear(HiddenParts)
+end
+local function hidePlayer(charModel)
+	if not charModel then return end
+	for _, child in charModel:GetDescendants() do
+		if child:IsA('BasePart') then
+			if HiddenParts[child] == nil then
+				HiddenParts[child] = child.LocalTransparencyModifier
+			end
+			child.LocalTransparencyModifier = 1
+		end
+	end
+end
+local function createGhost(charModel)
+	destroyGhost()
+	if not charModel then return end
 
-		table.insert(path, 1, {
-			Name = current.Name,
-			ClassName = current.ClassName,
-			Index = siblingIndex
-		})
+	local oldArchivable = charModel.Archivable
+	charModel.Archivable = true
+	VisualGhost = charModel:Clone()
+	charModel.Archivable = oldArchivable
+
+	if not VisualGhost then return end
+
+	GhostCharacter = charModel
+	VisualGhost.Name = 'AntiAimVisualGhost'
+
+	local GHOST_COLOR = Color3.fromRGB(5, 133, 104)
+
+	local ghostHumanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
+	if ghostHumanoid then
+		ghostHumanoid:Destroy()
+	end
+
+	for _, child in VisualGhost:GetChildren() do
+		if child:IsA('Accessory')
+			or child:IsA('Accoutrement') then
+			child:Destroy()
+		end
+	end
+
+	for _, child in VisualGhost:GetDescendants() do
+		if child:IsA('BasePart') then
+			child.Anchored = true
+			child.CanCollide = false
+			child.CanTouch = false
+			child.CanQuery = false
+			child.CastShadow = false
+			child.LocalTransparencyModifier = 0
+
+			if child.Name == 'HumanoidRootPart' then
+				child.Transparency = 1
+			else
+				child.Transparency = 0.65
+			end
+
+			child.Color = GHOST_COLOR
+			child.Material = Enum.Material.SmoothPlastic
+		elseif child:IsA('Motor6D')
+			or child:IsA('Weld')
+			or child:IsA('WeldConstraint')
+			or child:IsA('Constraint') then
+			child:Destroy()
+		elseif child:IsA('Decal')
+			or child:IsA('Clothing')
+			or child:IsA('ShirtGraphic') then
+			child:Destroy()
+		elseif child:IsA('Script')
+			or child:IsA('LocalScript')
+			or child:IsA('ModuleScript')
+			or child:IsA('BillboardGui')
+			or child:IsA('Animator') then
+			child:Destroy()
+		end
+	end
+
+	local highlight = Instance.new('Highlight')
+	highlight.Name = 'GhostHighlight'
+	highlight.Adornee = VisualGhost
+	highlight.FillColor = GHOST_COLOR
+	highlight.FillTransparency = 0.75
+	highlight.OutlineColor = Color3.fromRGB(0, 255, 128)
+	highlight.OutlineTransparency = 0
+	highlight.Parent = VisualGhost
+
+	VisualGhost.Parent = workspace
+end
+local function findGhostPart(realPart, realChar)
+	if GhostParts[realPart] and GhostParts[realPart].Parent then
+		return GhostParts[realPart]
+	end
+	local path = {}
+	local current = realPart
+	while current and current ~= realChar do
+		table.insert(path, 1, current.Name)
 		current = current.Parent
 	end
+	current = VisualGhost
+	for _, name in path do
+		current = current and current:FindFirstChild(name)
+	end
+	if current and current:IsA('BasePart') then
+		GhostParts[realPart] = current
+		return current
+	end
+end
+local function updateGhost(realChar, pitch, fakeYaw)
+	if not VisualGhost or GhostCharacter ~= realChar then
+		createGhost(realChar)
+	end
 
-	if current ~= realCharacter then return end
-
-	current = cloneCharacter
-
-	for _, segment in path do
-		local matchIndex = 0
-		local matchedChild
-
-		for _, child in current:GetChildren() do
-			if child.Name == segment.Name
-				and child.ClassName == segment.ClassName then
-				matchIndex += 1
-
-				if matchIndex == segment.Index then
-					matchedChild = child
-					break
+	if not VisualGhost then return end
+	local realRoot = realChar:FindFirstChild('HumanoidRootPart')
+	local realTorso = realChar:FindFirstChild('UpperTorso') or realChar:FindFirstChild('Torso')
+	if realRoot and realTorso then
+		local desiredRoot = CFrame.new(realRoot.Position) * CFrame.Angles(0, fakeYaw, 0)
+		local yawOffset = desiredRoot * realRoot.CFrame:Inverse()
+		local realPivot = realTorso.CFrame * CFrame.new(0, -realTorso.Size.Y / 2, 0)
+		local ghostPivot = yawOffset * realPivot
+		local pitchOffset = ghostPivot * CFrame.Angles(math.rad(pitch), 0, 0) * ghostPivot:Inverse()
+		local lowerBody = {
+			HumanoidRootPart = true,
+			LowerTorso = true,
+			LeftUpperLeg = true,
+			LeftLowerLeg = true,
+			LeftFoot = true,
+			RightUpperLeg = true,
+			RightLowerLeg = true,
+			RightFoot = true,
+			['Left Leg'] = true,
+			['Right Leg'] = true
+		}
+		for _, realPart in realChar:GetDescendants() do
+			if realPart:IsA('BasePart') then
+				local ghostPart = findGhostPart(realPart, realChar)
+				if ghostPart then
+					local targetCFrame = yawOffset * realPart.CFrame
+					if not lowerBody[realPart.Name] then
+						targetCFrame = pitchOffset * targetCFrame
+					end
+					ghostPart.CFrame = targetCFrame
 				end
 			end
 		end
-
-		current = matchedChild
-
-		if not current then
-			return
-		end
-	end
-
-	return current
-end
-
-local function createPlayerGhost(character)
-	clearPlayerView()
-	if not character then return false end
-
-	local oldArchivable = character.Archivable
-	character.Archivable = true
-
-	local success, clone = pcall(function()
-		return character:Clone()
-	end)
-
-	character.Archivable = oldArchivable
-
-	if not success or not clone then
-		return false
-	end
-
-	VisualGhost = clone
-	GhostCharacter = character
-	VisualGhost.Name = 'AntiAimPlayerView'
-
-	for _, realPart in character:GetDescendants() do
-		if realPart:IsA('BasePart') then
-			local ghostPart = findCloneInstance(realPart, character, VisualGhost)
-
-			if ghostPart and ghostPart:IsA('BasePart') then
-				GhostParts[realPart] = ghostPart
-			end
-		end
-	end
-
-	local realRoot = character:FindFirstChild('HumanoidRootPart')
-	local ghostRoot = realRoot and GhostParts[realRoot]
-
-	if not realRoot or not ghostRoot then
-		destroyGhost()
-		return false
-	end
-
-	local humanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
-
-	if humanoid then
-		humanoid.AutoRotate = false
-		humanoid.PlatformStand = true
-		humanoid.BreakJointsOnDeath = false
-		humanoid.RequiresNeck = false
-		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
-
-		pcall(function()
-			humanoid.EvaluateStateMachine = false
-		end)
-	end
-
-	for _, descendant in VisualGhost:GetDescendants() do
-		if descendant:IsA('Animator')
-			or descendant:IsA('AnimationController')
-			or descendant:IsA('Script')
-			or descendant:IsA('LocalScript')
-			or descendant:IsA('ModuleScript')
-			or descendant:IsA('BillboardGui')
-			or descendant:IsA('Sound')
-			or descendant:IsA('JointInstance')
-			or descendant:IsA('Constraint')
-			or descendant:IsA('BodyMover') then
-			descendant:Destroy()
-		elseif descendant:IsA('BasePart') then
-			descendant.Anchored = true
-			descendant.CanCollide = false
-			descendant.CanTouch = false
-			descendant.CanQuery = false
-			descendant.Massless = true
-			descendant.AssemblyLinearVelocity = Vector3.zero
-			descendant.AssemblyAngularVelocity = Vector3.zero
-			descendant.LocalTransparencyModifier = 0
-		end
-	end
-
-	ghostRoot.Transparency = 1
-	VisualGhost.Parent = workspace.CurrentCamera or workspace
-
-	if humanoid then
-		pcall(function()
-			humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-		end)
-	end
-
-	return true
-end
-
-local function getPitchPivot(character)
-	local torso = character:FindFirstChild('LowerTorso')
-		or character:FindFirstChild('Torso')
-		or character:FindFirstChild('UpperTorso')
-
-	if torso then
-		return torso.CFrame * CFrame.new(0, -torso.Size.Y / 2, 0)
 	end
 end
-
-local function updatePlayerGhost(character, pitch, fakeYaw)
-	if not VisualGhost
-		or not VisualGhost.Parent
-		or GhostCharacter ~= character then
-		if not createPlayerGhost(character) then
-			return false
-		end
-	end
-
-	local realRoot = character:FindFirstChild('HumanoidRootPart')
-	local ghostRoot = realRoot and GhostParts[realRoot]
-
-	if not realRoot or not ghostRoot or not ghostRoot.Parent then
-		return false
-	end
-
-	local targetRoot = CFrame.new(realRoot.Position)
-		* CFrame.Angles(0, fakeYaw, 0)
-	local yawOffset = targetRoot * realRoot.CFrame:Inverse()
-	local realPivot = getPitchPivot(character)
-	local pitchRotation
-
-	if realPivot then
-		local targetPivot = yawOffset * realPivot
-		pitchRotation = targetPivot
-			* CFrame.Angles(math.rad(pitch), 0, 0)
-			* targetPivot:Inverse()
-	end
-
-	for realPart, ghostPart in GhostParts do
-		if realPart.Parent and ghostPart.Parent then
-			local targetCFrame = yawOffset * realPart.CFrame
-
-			if pitchRotation and not LOWER_BODY_PARTS[realPart.Name] then
-				targetCFrame = pitchRotation * targetCFrame
-			end
-
-			ghostPart.CFrame = targetCFrame
-			ghostPart.LocalTransparencyModifier = 0
-		end
-	end
-
-	return true
-end
-
-local function updateAntiAimView(character, pitch, fakeYaw)
+local function updateAntiAimView(realChar, pitch, fakeYaw)
 	if not AntiAimView or not AntiAimView.Enabled then
-		clearPlayerView()
+		restorePlayerVisibility()
+		destroyGhost()
 		return
 	end
-
-	if updatePlayerGhost(character, pitch, fakeYaw) then
-		hidePlayer(character)
-	else
-		clearPlayerView()
-	end
+	updateGhost(realChar, pitch, fakeYaw)
+	hidePlayer(realChar)
 end
-
-local function getAntiAimPitch()
-	local mode = AntiAimMode.Value
-	local currentTime = tick()
-
-	if mode == 'Static' then
-		lastPitchValue = AntiAimPitch.Value
-	elseif mode == 'Random' then
-		if currentTime - lastPitchUpdate >= 1 then
-			lastPitchValue = AntiAimPitchRandom:GetRandomValue()
-			lastPitchUpdate = currentTime
-		end
-	elseif mode == 'Jitter' and currentTime - lastPitchUpdate >= 1 then
-		jitterState = not jitterState
-		lastPitchValue = jitterState and AntiAimPitchRandom.ValueMin or AntiAimPitchRandom.ValueMax
-		lastPitchUpdate = currentTime
-	end
-
-	return lastPitchValue
-end
-
-local function sendPitch(pitch)
-	if not UpdateReplication then return end
-
-	pitch = math.clamp(math.round(pitch), -90, 90)
-
-	local values
-
-	if pitch < 0 then
-		values = {2, 1, 255 + pitch}
-	else
-		values = {2, 0, pitch}
-	end
-
-	local packet = buffer.create(#values)
-
-	for index, value in values do
-		buffer.writeu8(packet, index - 1, value)
-	end
-
-	UpdateReplication:FireServer(packet)
-end
-
-local function restartSpinBot()
-	if SpinBot and SpinBot.Enabled then
-		SpinBot:Toggle()
-		SpinBot:Toggle()
-	end
-end
-
-local function updateAntiAimOptionVisibility()
-	if not AntiAim then return end
-
-	local enabled = AntiAim.Enabled
-	local mode = AntiAimMode and AntiAimMode.Value
-
-	if AntiAimMode then
-		AntiAimMode.Object.Visible = enabled
-	end
-
-	if AntiAimView then
-		AntiAimView.Object.Visible = enabled
-	end
-
-	if AntiAimPitch then
-		AntiAimPitch.Object.Visible = enabled and mode == 'Static'
-	end
-
-	if AntiAimPitchRandom then
-		AntiAimPitchRandom.Object.Visible = enabled and (mode == 'Random' or mode == 'Jitter')
-	end
-end
-
 SpinBot = vape.Categories.Blatant:CreateModule({
 	Name = 'SpinBot',
 	Function = function(callback)
 		if callback then
 			SpinAngle = 0
-			lastPitchUpdate = 0
-			lastPitchValue = 0
-			jitterState = false
-
+			if entitylib.isAlive then
+				if AntiAim and AntiAim.Enabled
+					and AntiAimView and AntiAimView.Enabled then
+					local charModel = entitylib.character.Character or LocalPlayer.Character
+					createGhost(charModel)
+				end
+			end
 			SpinBot:Clean(RunService.PreSimulation:Connect(function(delta)
-				if not entitylib.isAlive then
-					clearPlayerView()
-					return
-				end
-
-				local character = entitylib.character.Character
-				local root = entitylib.character.RootPart
-
-				if not character or not root then
-					clearPlayerView()
-					return
-				end
-
-				SpinAngle = (SpinAngle + math.rad(20 * Value.Value) * delta) % (math.pi * 2)
-
-				local x, y, z = root.CFrame:ToOrientation()
-				local fakeYaw = YToggle.Enabled and SpinAngle or y
-
-				root.CFrame = CFrame.new(root.Position) * CFrame.Angles(XToggle.Enabled and SpinAngle or x, fakeYaw, ZToggle.Enabled and SpinAngle or z)
-
-				if inSCPRP and AntiAim and AntiAim.Enabled then
-					local pitch = getAntiAimPitch()
-					updateAntiAimView(character, pitch, fakeYaw)
-					sendPitch(pitch)
+				if entitylib.isAlive then
+					local root = entitylib.character.RootPart
+					SpinAngle = (SpinAngle + math.rad(20 * Value.Value) * delta) % (math.pi * 2)
+					local x, y, z = root.CFrame:ToOrientation()
+					local fakeYaw = YToggle.Enabled and SpinAngle or y
+					root.CFrame = CFrame.new(root.Position) * CFrame.Angles(XToggle.Enabled and SpinAngle or x, fakeYaw, ZToggle.Enabled and SpinAngle or z)
+					if inSCPRP and (AntiAim and AntiAim.Enabled) then
+						local pitch = 0
+						local currentTime = tick()
+						if AntiAimMode.Value == 'Static' then
+							pitch = AntiAimPitch.Value
+						elseif AntiAimMode.Value == 'Random' then
+							if currentTime - lastupd >= 1 then
+								pitch = AntiAimPitchRandom:GetRandomValue()
+								lastupd = currentTime
+							else
+								pitch = lastPitchUpdate_Value
+							end
+						elseif AntiAimMode.Value == 'Jitter' then
+							if currentTime - lastupd >= 1 then
+								jit_tog = not jit_tog
+								pitch = jit_tog and AntiAimPitchRandom.ValueMin or AntiAimPitchRandom.ValueMax
+								lastupd = currentTime
+							else
+								pitch = jit_tog and AntiAimPitchRandom.ValueMin or AntiAimPitchRandom.ValueMax
+							end
+						end
+						lastPitchUpdate_Value = pitch
+						if entitylib.character.Character then
+							updateAntiAimView(entitylib.character.Character, pitch, fakeYaw)
+						end
+						local bytes = {2, 0, 0}
+						if pitch < 0 then
+							bytes[1], bytes[2], bytes[3] = 2, 1, 255 + pitch
+						else
+							bytes[1], bytes[2], bytes[3] = 2, 0, pitch
+						end
+						UpdateReplication:FireServer((function(b_vals)
+							local b = buffer.create(#b_vals)
+							for i = 1, #b_vals do
+								buffer.writeu8(b, i - 1, b_vals[i])
+							end
+							return b
+						end)(bytes))
+					else
+						restorePlayerVisibility()
+						destroyGhost()
+					end
 				else
-					clearPlayerView()
+					restorePlayerVisibility()
+					destroyGhost()
 				end
 			end))
 		else
-			clearPlayerView()
+			restorePlayerVisibility()
+			destroyGhost()
 
-			if inSCPRP then
-				sendPitch(0)
+			if AntiAim and AntiAim.Enabled then
+				UpdateReplication:FireServer((function(b_vals)
+					local b = buffer.create(#b_vals)
+					for i = 1, #b_vals do
+						buffer.writeu8(b, i - 1, b_vals[i])
+					end
+					return b
+				end)({2, 0, 0}))
 			end
 		end
 	end,
 	Tooltip = 'Makes your character continuously spin'
 })
-
 Value = SpinBot:CreateSlider({
 	Name = 'Speed',
 	Min = 1,
 	Max = 100,
 	Default = 40
 })
-
 if inSCPRP then
 	AntiAim = SpinBot:CreateToggle({
 		Name = 'Anti Aim',
-		Function = function()
-			updateAntiAimOptionVisibility()
-			restartSpinBot()
+		Function = function(val)
+			AntiAimPitch.Object.Visible = (AntiAimMode.Value == 'Static' and val and true) or false
+			AntiAimPitchRandom.Object.Visible = ((AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) and val) or false
+			AntiAimMode.Object.Visible = val
+			AntiAimView.Object.Visible = val
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
 		end,
-		Tooltip = 'Spoofs your pitch server-side'
+		Tooltip = "Spoofs your pitch server-side"
 	})
-
 	AntiAimMode = SpinBot:CreateDropdown({
 		Name = 'AimType',
 		List = {'Static', 'Random', 'Jitter'},
-		Function = function()
-			updateAntiAimOptionVisibility()
-			restartSpinBot()
+		Function = function(val)
+			AntiAimPitch.Object.Visible = AntiAimMode.Value == 'Static' and true or false
+			AntiAimPitchRandom.Object.Visible = (AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) or false
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
 		end,
-		Tooltip = 'Forces your pitch in three ways\nStatic: always one value\nRandom: random value in a range\nJitter: switches between two values'
+		Tooltip = "Forces yor pitch in 3 ways\nStatic: always one\nRandom: random range between two values\nJitter: switch between the two"
 	})
-
 	AntiAimView = SpinBot:CreateToggle({
 		Name = 'Serverside view',
-		Function = restartSpinBot,
-		Tooltip = 'lets you somewhat accruately see what others see ur character as'
+		Function = function(val)
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
+		end,
+		Tooltip = methodTooltip
 	})
-
 	AntiAimPitch = SpinBot:CreateSlider({
 		Name = 'Pitch',
 		Min = -90,
 		Max = 90,
 		Default = 0
 	})
-
 	AntiAimPitchRandom = SpinBot:CreateTwoSlider({
 		Name = 'Pitch range',
 		Min = -90,
@@ -461,15 +338,14 @@ if inSCPRP then
 		DefaultMin = -90,
 		DefaultMax = 90
 	})
-
-	updateAntiAimOptionVisibility()
+	AntiAimPitch.Object.Visible = (AntiAimMode.Value == 'Static' and AntiAim.Enabled and true) or false
+	AntiAimPitchRandom.Object.Visible = ((AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) and AntiAim.Enabled) or false
+	AntiAimMode.Object.Visible = AntiAim.Enabled
+	AntiAimView.Object.Visible = AntiAim.Enabled
 end
-
 XToggle = SpinBot:CreateToggle({Name = 'Spin X'})
-
 YToggle = SpinBot:CreateToggle({
 	Name = 'Spin Y',
 	Default = true
 })
-
 ZToggle = SpinBot:CreateToggle({Name = 'Spin Z'})
