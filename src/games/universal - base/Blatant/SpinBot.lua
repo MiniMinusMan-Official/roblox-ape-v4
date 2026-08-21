@@ -29,7 +29,6 @@ local ViewActive = false
 
 local LOWER_BODY_PARTS = {
 	HumanoidRootPart = true,
-	LowerTorso = true,
 	LeftUpperLeg = true,
 	LeftLowerLeg = true,
 	LeftFoot = true,
@@ -38,6 +37,21 @@ local LOWER_BODY_PARTS = {
 	RightFoot = true,
 	['Left Leg'] = true,
 	['Right Leg'] = true
+}
+
+local UPPER_BODY_PARTS = {
+	LowerTorso = true,
+	UpperTorso = true,
+	Torso = true,
+	Head = true,
+	LeftUpperArm = true,
+	LeftLowerArm = true,
+	LeftHand = true,
+	RightUpperArm = true,
+	RightLowerArm = true,
+	RightHand = true,
+	['Left Arm'] = true,
+	['Right Arm'] = true
 }
 
 local inSCPRP = game.PlaceId == 5041144419 or game.PlaceId == 10953555034
@@ -91,7 +105,24 @@ local function findCloneInstance(realInstance, realCharacter, cloneCharacter)
 	local current = realInstance
 
 	while current and current ~= realCharacter do
-		table.insert(path, 1, current.Name)
+		local siblingIndex = 0
+
+		for _, sibling in current.Parent:GetChildren() do
+			if sibling.Name == current.Name
+				and sibling.ClassName == current.ClassName then
+				siblingIndex += 1
+
+				if sibling == current then
+					break
+				end
+			end
+		end
+
+		table.insert(path, 1, {
+			Name = current.Name,
+			ClassName = current.ClassName,
+			Index = siblingIndex
+		})
 		current = current.Parent
 	end
 
@@ -99,9 +130,27 @@ local function findCloneInstance(realInstance, realCharacter, cloneCharacter)
 
 	current = cloneCharacter
 
-	for _, name in path do
-		current = current and current:FindFirstChild(name)
-		if not current then return end
+	for _, segment in path do
+		local matchIndex = 0
+		local matchedChild
+
+		for _, child in current:GetChildren() do
+			if child.Name == segment.Name
+				and child.ClassName == segment.ClassName then
+				matchIndex += 1
+
+				if matchIndex == segment.Index then
+					matchedChild = child
+					break
+				end
+			end
+		end
+
+		current = matchedChild
+
+		if not current then
+			return
+		end
 	end
 
 	return current
@@ -117,18 +166,42 @@ local function findMotor(character, name)
 	end
 end
 
+local function findPitchMotor(character)
+	return findMotor(character, 'Root')
+		or findMotor(character, 'RootJoint')
+		or findMotor(character, 'Waist')
+end
+
 local function buildPitchParts(character)
 	table.clear(GhostPitchParts)
 
-	local waist = findMotor(character, 'Waist')
-	local rootJoint = findMotor(character, 'RootJoint')
-	local startPart = (waist and waist.Part1)
-		or (rootJoint and rootJoint.Part1)
+	local pitchMotor = findPitchMotor(character)
+	local startPart
+
+	if pitchMotor then
+		if pitchMotor.Part1
+			and not LOWER_BODY_PARTS[pitchMotor.Part1.Name] then
+			startPart = pitchMotor.Part1
+		elseif pitchMotor.Part0
+			and not LOWER_BODY_PARTS[pitchMotor.Part0.Name] then
+			startPart = pitchMotor.Part0
+		end
+	end
+
+	startPart = startPart
+		or character:FindFirstChild('LowerTorso')
 		or character:FindFirstChild('UpperTorso')
 		or character:FindFirstChild('Torso')
 
 	if not startPart then return end
 	GhostPitchParts[startPart] = true
+
+	for _, descendant in character:GetDescendants() do
+		if descendant:IsA('BasePart')
+			and UPPER_BODY_PARTS[descendant.Name] then
+			GhostPitchParts[descendant] = true
+		end
+	end
 
 	local joints = {}
 
@@ -149,27 +222,24 @@ local function buildPitchParts(character)
 			local part1 = joint.Part1
 
 			if part0 and part1 then
-				if joint:IsA('Motor6D') then
-					if GhostPitchParts[part0]
-						and not LOWER_BODY_PARTS[part1.Name]
-						and not GhostPitchParts[part1] then
-						GhostPitchParts[part1] = true
-						changed = true
-					end
-				else
-					if GhostPitchParts[part0]
-						and not LOWER_BODY_PARTS[part1.Name]
-						and not GhostPitchParts[part1] then
-						GhostPitchParts[part1] = true
-						changed = true
-					elseif GhostPitchParts[part1]
-						and not LOWER_BODY_PARTS[part0.Name]
-						and not GhostPitchParts[part0] then
-						GhostPitchParts[part0] = true
-						changed = true
-					end
+				if GhostPitchParts[part0]
+					and not LOWER_BODY_PARTS[part1.Name]
+					and not GhostPitchParts[part1] then
+					GhostPitchParts[part1] = true
+					changed = true
+				elseif GhostPitchParts[part1]
+					and not LOWER_BODY_PARTS[part0.Name]
+					and not GhostPitchParts[part0] then
+					GhostPitchParts[part0] = true
+					changed = true
 				end
 			end
+		end
+	end
+
+	for part in GhostPitchParts do
+		if LOWER_BODY_PARTS[part.Name] then
+			GhostPitchParts[part] = nil
 		end
 	end
 end
@@ -215,11 +285,23 @@ local function createPlayerGhost(character)
 		return false
 	end
 
+	local humanoid = VisualGhost:FindFirstChildOfClass('Humanoid')
+
+	if humanoid then
+		humanoid.AutoRotate = false
+		humanoid.PlatformStand = true
+		humanoid.BreakJointsOnDeath = false
+		humanoid.RequiresNeck = false
+		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+
+		pcall(function()
+			humanoid.EvaluateStateMachine = false
+		end)
+	end
+
 	for _, descendant in VisualGhost:GetDescendants() do
-		if descendant:IsA('Humanoid')
-			or descendant:IsA('Animator')
-			or descendant:IsA('AnimationController')
-			or descendant:IsA('Script')
+		if descendant:IsA('Script')
 			or descendant:IsA('LocalScript')
 			or descendant:IsA('ModuleScript')
 			or descendant:IsA('BillboardGui')
@@ -243,12 +325,17 @@ local function createPlayerGhost(character)
 	ghostRoot.Transparency = 1
 	VisualGhost.Parent = workspace
 
+	if humanoid then
+		pcall(function()
+			humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+		end)
+	end
+
 	return true
 end
 
 local function getPitchPivot(character)
-	local motor = findMotor(character, 'Waist')
-		or findMotor(character, 'RootJoint')
+	local motor = findPitchMotor(character)
 
 	if motor and motor.Part0 then
 		return motor.Part0.CFrame * motor.C0 * motor.Transform
