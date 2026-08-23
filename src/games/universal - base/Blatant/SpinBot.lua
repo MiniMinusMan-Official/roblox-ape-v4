@@ -428,7 +428,7 @@ else
 	})
 	AntiAimAnimCustom = SpinBot:CreateTextBox({
 		Name = 'Custom Animation',
-		Placeholder = 'animation id'
+		Placeholder = 'animation id',
 		Function = function(val)
 			if SpinBot.Enabled then
 				stopAnim()
