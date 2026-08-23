@@ -8,6 +8,11 @@ local AntiAimPitch
 local AntiAimView
 local AntiAimPitchRandom
 local AntiAimMode
+local AntiAimB
+local AntiAimModeB
+local AntiAimAnim
+local AntiAimAnimPreset
+local AntiAimAnimCustom
 local lastupd = 0
 local jit_tog = false
 local SpinAngle = 0
@@ -307,11 +312,6 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 	end,
 	Tooltip = 'Makes your character continuously spin'
 })
-local AntiAimB
-local AntiAimModeB
-local AntiAimAnim
-local AntiAimAnimPreset
-local AntiAimAnimCustom
 Value = SpinBot:CreateSlider({
 	Name = 'Speed',
 	Min = 1,
