@@ -28,6 +28,32 @@ if inSCPRP then
 	UpdateReplication = game:GetService("ReplicatedStorage").Remotes.UpdateReplication
 end
 
+local curtrack = nil
+
+local function playAnim(id)
+	if curtrack then 
+		curtrack:Stop() 
+	end
+	if not entitylib.isAlive then return end
+	if not entitylib.character then return end
+	local humanoid = entitylib.character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return end
+	local anm = humanoid:FindFirstChildOfClass("Animator") or humanoid:WaitForChild("Animator")
+	local cleaned = string.match(tostring(id), "%d+")
+	if not cleaned then return end
+	local anim = Instance.new("Animation")
+	anim.AnimationId = "rbxassetid://" .. cleaned
+	curtrack = anm:LoadAnimation(anim)
+	curtrack.Priority = Enum.AnimationPriority.Action4
+	curtrack.Looped = true
+	curtrack:Play()
+end
+local function stopAnim()
+	if curtrack then
+		curtrack:Stop()
+		curtrack = nil
+	end
+end
 local function destroyGhost()
 	if VisualGhost then
 		VisualGhost:Destroy()
@@ -281,6 +307,11 @@ SpinBot = vape.Categories.Blatant:CreateModule({
 	end,
 	Tooltip = 'Makes your character continuously spin'
 })
+local AntiAimB
+local AntiAimModeB
+local AntiAimAnim
+local AntiAimAnimPreset
+local AntiAimAnimCustom
 Value = SpinBot:CreateSlider({
 	Name = 'Speed',
 	Min = 1,
@@ -342,6 +373,74 @@ if inSCPRP then
 	AntiAimPitchRandom.Object.Visible = ((AntiAimMode.Value == 'Random' and true) or (AntiAimMode.Value == 'Jitter' and true) and AntiAim.Enabled) or false
 	AntiAimMode.Object.Visible = AntiAim.Enabled
 	AntiAimView.Object.Visible = AntiAim.Enabled
+else
+	AntiAimB = SpinBot:CreateToggle({
+		Name = 'Anti Aim',
+		Function = function(val)
+			AntiAimModeB.Object.Visible = val
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
+		end,
+		Tooltip = "funny anti aim horhorhror"
+	})
+	AntiAimModeB = SpinBot:CreateDropdown({
+		Name = 'AimType',
+		List = {'Animation', 'mode2', 'mode3'},
+		Function = function(val)
+			AntiAimAnim.Object.Visible = AntiAimModeB.Value == 'Animation' and true or false
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
+		end,
+		Tooltip = "Animation: plays an animation on your character"
+	})
+	
+	--animation
+	AntiAimAnim = SpinBot:CreateDropdown({
+		Name = 'Animation',
+		List = {'Preset', 'Custom'},
+		Function = function(val)
+			AntiAimAnimPreset.Object.Visible = AntiAimModeB.Value == 'Preset' and true or false
+			AntiAimAnimCustom.Object.Visible = AntiAimModeB.Value == 'Custom' and true or false
+			if SpinBot.Enabled then
+				SpinBot:Toggle()
+				SpinBot:Toggle()
+			end
+		end,
+		Tooltip = "Preset: selection of a few animations\nCustom: put your own AnimationId (ids from a link wont work, you need the id. use btroblox)"
+	})
+	AntiAimAnimPreset = SpinBot:CreateDropdown({
+		Name = 'Animation',
+		List = {'Headless', 'CS2 type anti aim'},
+		Function = function(val)
+			if SpinBot.Enabled then
+				stopAnim()
+				local id = (AntiAimAnimPreset.Value == 'Headless' and "100199766676370") or (AntiAimAnimPreset.Value == 'CS2 type shi' and "79480770273758") or ""
+				if id ~= "" then
+					playAnim(id)
+				end
+			end
+		end,
+		Tooltip = "take a guess what they do"
+	})
+	AntiAimAnimCustom = SpinBot:CreateTextBox({
+		Name = 'Custom Animation',
+		Placeholder = 'animation id'
+		Function = function(val)
+			if SpinBot.Enabled then
+				stopAnim()
+				local id = AntiAimAnimCustom.Value
+				if id ~= "" then
+					playAnim(id)
+				end
+			end
+		end
+	})
+	--mode2
+	--mode3
 end
 XToggle = SpinBot:CreateToggle({Name = 'Spin X'})
 YToggle = SpinBot:CreateToggle({
