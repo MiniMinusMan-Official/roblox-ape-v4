@@ -374,10 +374,27 @@ if inSCPRP then
 	AntiAimMode.Object.Visible = AntiAim.Enabled
 	AntiAimView.Object.Visible = AntiAim.Enabled
 else
+	local function updateVisibility()
+		local isAntiAimOn = AntiAimB.Value
+		local mode = AntiAimModeB.Value
+		local animType = AntiAimAnim.Value
+
+		-- kayer 1: main dropdown for antiaim
+		AntiAimModeB.Object.Visible = isAntiAimOn
+
+		-- layer 2: next dropdonw only shows if AntiAim is on and on correct mode
+		local isAnimMode = isAntiAimOn and (mode == 'Animation')
+		AntiAimAnim.Object.Visible = isAnimMode
+
+		-- layre 3: requires right mode and layer 2
+		AntiAimAnimPreset.Object.Visible = isAnimMode and (animType == 'Preset')
+		AntiAimAnimCustom.Object.Visible = isAnimMode and (animType == 'Custom')
+	end
+	
 	AntiAimB = SpinBot:CreateToggle({
 		Name = 'Anti Aim',
 		Function = function(val)
-			AntiAimModeB.Object.Visible = val
+			updateVisibility()
 			if SpinBot.Enabled then
 				SpinBot:Toggle()
 				SpinBot:Toggle()
@@ -385,11 +402,12 @@ else
 		end,
 		Tooltip = "funny anti aim horhorhror"
 	})
+
 	AntiAimModeB = SpinBot:CreateDropdown({
 		Name = 'AimType',
 		List = {'Animation', 'mode2', 'mode3'},
 		Function = function(val)
-			AntiAimAnim.Object.Visible = AntiAimModeB.Value == 'Animation' and true or false
+			updateVisibility()
 			if SpinBot.Enabled then
 				SpinBot:Toggle()
 				SpinBot:Toggle()
@@ -397,28 +415,27 @@ else
 		end,
 		Tooltip = "Animation: plays an animation on your character"
 	})
-	
-	--animation
+
 	AntiAimAnim = SpinBot:CreateDropdown({
 		Name = 'Animation',
 		List = {'Preset', 'Custom'},
 		Function = function(val)
-			AntiAimAnimPreset.Object.Visible = AntiAimModeB.Value == 'Preset' and true or false
-			AntiAimAnimCustom.Object.Visible = AntiAimModeB.Value == 'Custom' and true or false
+			updateVisibility()
 			if SpinBot.Enabled then
 				SpinBot:Toggle()
 				SpinBot:Toggle()
 			end
 		end,
-		Tooltip = "Preset: selection of a few animations\nCustom: put your own AnimationId (ids from a link wont work, you need the id. use btroblox)"
+		Tooltip = "Preset: selection of a few animations\nCustom: put your own AnimationId"
 	})
+
 	AntiAimAnimPreset = SpinBot:CreateDropdown({
-		Name = 'Animation',
+		Name = 'Animation Preset',
 		List = {'Headless', 'CS2 type anti aim'},
 		Function = function(val)
 			if SpinBot.Enabled then
 				stopAnim()
-				local id = (AntiAimAnimPreset.Value == 'Headless' and "100199766676370") or (AntiAimAnimPreset.Value == 'CS2 type shi' and "79480770273758") or ""
+				local id = (AntiAimAnimPreset.Value == 'Headless' and "100199766676370") or (AntiAimAnimPreset.Value == 'CS2 type anti aim' and "79480770273758") or ""
 				if id ~= "" then
 					playAnim(id)
 				end
@@ -426,6 +443,7 @@ else
 		end,
 		Tooltip = "take a guess what they do"
 	})
+
 	AntiAimAnimCustom = SpinBot:CreateTextBox({
 		Name = 'Custom Animation',
 		Placeholder = 'animation id',
@@ -439,8 +457,8 @@ else
 			end
 		end
 	})
-	--mode2
-	--mode3
+	--so it looks good if its not configured lol
+	updateVisibility()
 end
 XToggle = SpinBot:CreateToggle({Name = 'Spin X'})
 YToggle = SpinBot:CreateToggle({
